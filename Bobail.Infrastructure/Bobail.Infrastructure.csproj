@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bobail.Application\Bobail.Application.csproj" />
+    <ProjectReference Include="..\Bobail.Domain\Bobail.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

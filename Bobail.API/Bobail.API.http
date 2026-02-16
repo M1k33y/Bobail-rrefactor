@@ -1,0 +1,6 @@
+@Bobail.API_HostAddress = http://localhost:5173
+
+GET {{Bobail.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

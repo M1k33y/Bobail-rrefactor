@@ -1,0 +1,35 @@
+#board {
+    display: grid;
+    grid-template-columns: repeat(5, 60px);
+    gap: 5px;
+    margin-top: 20px;
+}
+
+.cell {
+    width: 60px;
+    height: 60px;
+    border: 1px solid black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.red {
+    background-color: red;
+}
+
+.green {
+    background-color: green;
+}
+
+.bobail {
+    background-color: yellow;
+}
+.selected {
+    outline: 3px solid black;
+}
+
+.valid-move {
+    background-color: lightblue;
+}
