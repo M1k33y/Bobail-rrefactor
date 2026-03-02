@@ -133,7 +133,7 @@ public static class GameRules
             var neighbor = new Position(newRow, newCol);
 
             if (game.Board.IsEmpty(neighbor))
-                return false; // există mutare posibilă
+                return false; // exista mutare posibila
         }
 
         return true; // niciun pătrat liber

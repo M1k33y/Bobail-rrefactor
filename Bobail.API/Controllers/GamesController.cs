@@ -57,6 +57,8 @@ public class GamesController : ControllerBase
         return NoContent();
     }
 
+
+
     [HttpPost("{id:guid}/player-move")]
     public async Task<ActionResult> ExecutePlayerMove(Guid id, [FromBody] PlayerMoveRequest request)
     {
@@ -87,4 +89,7 @@ public class GamesController : ControllerBase
 
         return Ok(moves.Select(m => new { row = m.Row, column = m.Column }));
     }
+
+
+
 }

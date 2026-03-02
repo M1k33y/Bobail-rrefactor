@@ -34,6 +34,10 @@ public class Game : Entity
 
         GameRules.ValidateBobailMove(this, target);
         GameRules.ApplyBobailMove(this, target);
+        GameRules.CheckVictory(this);
+
+        if (Status == GameStatus.Finished)
+            return;
 
         CurrentPhase = TurnPhase.PlayerMoveRequired;
     }
