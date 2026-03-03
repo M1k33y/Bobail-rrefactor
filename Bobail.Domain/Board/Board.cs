@@ -5,13 +5,21 @@ namespace Bobail.Domain.Board;
 
 public class Board
 {
-    private readonly List<Piece> _pieces = new();
+    private readonly List<Piece> _pieces;
 
     public IReadOnlyCollection<Piece> Pieces => _pieces.AsReadOnly();
 
+    // constructor normal
     public Board()
     {
+        _pieces = new List<Piece>();
         Initialize();
+    }
+
+    // constructor pt clone
+    private Board(List<Piece> pieces)
+    {
+        _pieces = pieces;
     }
 
     private void Initialize()
@@ -45,5 +53,14 @@ public class Board
     public void MovePiece(Piece piece, Position target)
     {
         piece.MoveTo(target);
+    }
+
+    public Board Clone()
+    {
+        var clonedPieces = _pieces
+            .Select(p => p.Clone())
+            .ToList();
+
+        return new Board(clonedPieces);
     }
 }

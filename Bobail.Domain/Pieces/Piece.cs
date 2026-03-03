@@ -29,4 +29,12 @@ public class Piece : Entity
     {
         Position = newPosition;
     }
+
+    public Piece Clone()
+    {
+        return new Piece(
+            Type,
+            new Position(Position.Row, Position.Column),
+            Owner);
+    }
 }

@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Bobail.API.DTOs;
+using Bobail.Application.Interfaces.Services;
 using Bobail.Application.Services;
-using Bobail.API.DTOs;
 using Bobail.Domain.Games;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Bobail.API.Controllers;
 
@@ -9,9 +10,9 @@ namespace Bobail.API.Controllers;
 [Route("api/[controller]")]
 public class GamesController : ControllerBase
 {
-    private readonly GameService _gameService;
+    private readonly IGameService _gameService;
 
-    public GamesController(GameService gameService)
+    public GamesController(IGameService gameService)
     {
         _gameService = gameService;
     }

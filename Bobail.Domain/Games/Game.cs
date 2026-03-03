@@ -33,6 +33,31 @@ public class Game : Entity
         BotColor = botColor;
     }
 
+    //constructor de clone
+    private Game(
+    GameMode mode,
+    BotDifficulty? botDifficulty,
+    PlayerColor? botColor,
+    Board.Board board,
+    PlayerColor currentTurn,
+    bool isFirstTurn,
+    GameStatus status,
+    TurnPhase currentPhase,
+    PlayerColor? winner)
+    {
+        Board = board;
+
+        Mode = mode;
+        BotDifficulty = botDifficulty;
+        BotColor = botColor;
+
+        CurrentTurn = currentTurn;
+        IsFirstTurn = isFirstTurn;
+        Status = status;
+        CurrentPhase = currentPhase;
+        Winner = winner;
+    }
+
     public bool IsBotTurn()
     {
         return Mode == GameMode.PlayerVsBot &&
@@ -106,5 +131,19 @@ public class Game : Entity
 
             CurrentPhase = TurnPhase.BobailMoveRequired;
         }
+    }
+
+    public Game Clone()
+    {
+        return new Game(
+            Mode,
+            BotDifficulty,
+            BotColor,
+            Board.Clone(),
+            CurrentTurn,
+            IsFirstTurn,
+            Status,
+            CurrentPhase,
+            Winner);
     }
 }
