@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import { Play, BookOpen } from "lucide-react";
 import { Settings } from "lucide-react";
+import "../styles/Sidebar.css";
 function Sidebar() {
     const [playOpen, setPlayOpen] = useState(false);
 
@@ -14,10 +15,10 @@ function Sidebar() {
                 onMouseEnter={() => setPlayOpen(true)}
                 onMouseLeave={() => setPlayOpen(false)}
             >
-                <div className="menu-item">
+                <NavLink to="/" className="menu-item">
                     <Play size={18} />
                     <span>Play</span>
-                </div>
+                </NavLink>
 
                 <div className={`submenu ${playOpen ? "open" : ""}`}>
                     <NavLink to="/play/local" className="submenu-item">

@@ -1,4 +1,4 @@
-import { useTheme } from "../app/theme/ThemeContext";
+import { useTheme } from "../../../app/theme/ThemeContext";
 import "../styles/SettingsPage.css";
 function SettingsPage() {
     const {

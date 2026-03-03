@@ -1,3 +1,6 @@
+import "./styles/Cell.css";
+import Piece from "./Piece";
+
 function Cell({ row, col, game, selected, validMoves, onClick }) {
   const piece = game.pieces.find(
     p => p.row === row && p.column === col
@@ -10,21 +13,6 @@ function Cell({ row, col, game, selected, validMoves, onClick }) {
     m => m.row === row && m.column === col
   );
 
-  let pieceClass = "";
-
-  if (piece) {
-    if (piece.type === "Bobail") {
-      pieceClass = "bobail";
-    }
-
-    if (piece.type === "PlayerPiece") {
-      pieceClass =
-        piece.owner === "Red"
-          ? "red"
-          : "green";
-    }
-  }
-
   return (
     <div
       className={`cell ${isSelected ? "selected" : ""} ${
@@ -32,7 +20,12 @@ function Cell({ row, col, game, selected, validMoves, onClick }) {
       }`}
       onClick={() => onClick(row, col)}
     >
-      {piece && <div className={`piece ${pieceClass}`} />}
+      {piece && (
+        <Piece
+          type={piece.type}
+          owner={piece.owner}
+        />
+      )}
     </div>
   );
 }

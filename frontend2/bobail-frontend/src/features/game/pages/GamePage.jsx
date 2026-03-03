@@ -3,7 +3,7 @@ import { useGame } from "../hooks/useGame";
 import Board from "../components/Board";
 import WinnerModal from "../components/WinnerModal";
 import { useState, useEffect } from "react";
-import "../../../styles/GamePage.css";
+import "../styles/GamePage.css";
 function GamePage() {
   const navigate = useNavigate();
   const { gameId } = useParams();

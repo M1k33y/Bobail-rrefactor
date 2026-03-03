@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { gameApi } from "../services/gameApi";
+import { gameApi } from "../api/gameApi";
 
 export function useGame(gameId) {
   const [game, setGame] = useState(null);

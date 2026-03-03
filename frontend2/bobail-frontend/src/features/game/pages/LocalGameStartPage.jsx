@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { gameApi } from "../services/gameApi";
+import { gameApi } from "../api/gameApi";
 
 function LocalGameStartPage() {
   const navigate = useNavigate();

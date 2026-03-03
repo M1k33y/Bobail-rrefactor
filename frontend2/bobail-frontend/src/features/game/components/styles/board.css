@@ -1,0 +1,8 @@
+#board {
+  display: grid;
+  grid-template-columns: repeat(5, 70px);
+  gap: 6px;
+  background-color: var(--boardBg);
+  padding: 10px;
+  border-radius: 12px;
+}
