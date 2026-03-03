@@ -12,13 +12,55 @@ public class Game : Entity
     public PlayerColor? Winner { get; private set; }
     public TurnPhase CurrentPhase { get; private set; }
 
-    public Game()
+    public GameMode Mode { get; private set; }
+    public BotDifficulty? BotDifficulty { get; private set; }
+    public PlayerColor? BotColor { get; private set; }
+
+    public Game(
+    GameMode mode = GameMode.LocalMultiplayer,
+    BotDifficulty? botDifficulty = null,
+    PlayerColor? botColor = null)
     {
         Board = new Board.Board();
+
         CurrentTurn = PlayerColor.Red;
         IsFirstTurn = true;
         Status = GameStatus.InProgress;
         CurrentPhase = TurnPhase.PlayerMoveRequired;
+
+        Mode = mode;
+        BotDifficulty = botDifficulty;
+        BotColor = botColor;
+    }
+
+    public bool IsBotTurn()
+    {
+        return Mode == GameMode.PlayerVsBot &&
+               BotColor.HasValue &&
+               CurrentTurn == BotColor.Value;
+    }
+
+    private void SwitchTurn()
+    {
+        CurrentTurn = CurrentTurn == PlayerColor.Red
+            ? PlayerColor.Green
+            : PlayerColor.Red;
+    }
+
+    public void Finish(PlayerColor winner)
+    {
+        Status = GameStatus.Finished;
+        Winner = winner;
+    }
+
+    public List<Position> GetValidPlayerMoves(Position from)
+    {
+        return GameRules.GetValidPlayerMoves(this, from);
+    }
+
+    public List<Position> GetValidBobailMoves()
+    {
+        return GameRules.GetValidBobailMoves(this);
     }
 
     public void ExecuteBobailMove(Position target)
@@ -34,6 +76,10 @@ public class Game : Entity
 
         GameRules.ValidateBobailMove(this, target);
         GameRules.ApplyBobailMove(this, target);
+        GameRules.CheckVictory(this);
+
+        if (Status == GameStatus.Finished)
+            return;
 
         CurrentPhase = TurnPhase.PlayerMoveRequired;
     }
@@ -60,27 +106,5 @@ public class Game : Entity
 
             CurrentPhase = TurnPhase.BobailMoveRequired;
         }
-    }
-
-    private void SwitchTurn()
-    {
-        CurrentTurn = CurrentTurn == PlayerColor.Red
-            ? PlayerColor.Green
-            : PlayerColor.Red;
-    }
-
-    public void Finish(PlayerColor winner)
-    {
-        Status = GameStatus.Finished;
-        Winner = winner;
-    }
-    public List<Position> GetValidPlayerMoves(Position from)
-    {
-        return GameRules.GetValidPlayerMoves(this, from);
-    }
-
-    public List<Position> GetValidBobailMoves()
-    {
-        return GameRules.GetValidBobailMoves(this);
     }
 }

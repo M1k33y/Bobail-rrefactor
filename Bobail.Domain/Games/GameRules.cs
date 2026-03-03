@@ -73,8 +73,7 @@ public static class GameRules
 
     private static bool BelongsToCurrentPlayer(Piece piece, PlayerColor currentTurn)
     {
-        return (piece.Type == PieceType.Red && currentTurn == PlayerColor.Red)
-            || (piece.Type == PieceType.Green && currentTurn == PlayerColor.Green);
+        return piece.Owner == currentTurn;
     }
 
     private static void ValidatePathClear(Game game, Position from, Position to, Direction direction)
@@ -133,7 +132,7 @@ public static class GameRules
             var neighbor = new Position(newRow, newCol);
 
             if (game.Board.IsEmpty(neighbor))
-                return false; // există mutare posibilă
+                return false; // exista mutare posibila
         }
 
         return true; // niciun pătrat liber

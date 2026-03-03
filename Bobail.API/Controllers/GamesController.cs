@@ -16,6 +16,7 @@ public class GamesController : ControllerBase
         _gameService = gameService;
     }
 
+
     [HttpPost]
     public async Task<ActionResult> CreateGame()
     {
@@ -23,6 +24,19 @@ public class GamesController : ControllerBase
 
         return Ok(new { gameId });
     }
+
+    [HttpPost("vs-bot")]
+    public async Task<ActionResult> CreateGameVsBot(
+        [FromBody] CreateBotGameRequest request)
+    {
+        var gameId = await _gameService.CreateGameAsync(
+        GameMode.PlayerVsBot,
+        request.Difficulty,
+        request.BotColor);
+
+        return Ok(new { gameId });
+    }
+
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult> GetGame(Guid id)
@@ -37,28 +51,23 @@ public class GamesController : ControllerBase
             game.Winner,
             game.IsFirstTurn,
             game.CurrentPhase,
+            game.Mode,
+            game.BotColor,
             Pieces = game.Board.Pieces.Select(p => new
             {
                 p.Type,
+                p.Owner,
                 p.Position.Row,
                 p.Position.Column
             })
         });
     }
 
-    [HttpPost("{id:guid}/bobail-move")]
-    public async Task<ActionResult> ExecuteBobailMove(Guid id, [FromBody] BobailMoveRequest request)
-    {
-        await _gameService.ExecuteBobailMoveAsync(
-            id,
-            request.ToRow,
-            request.ToColumn);
-
-        return NoContent();
-    }
 
     [HttpPost("{id:guid}/player-move")]
-    public async Task<ActionResult> ExecutePlayerMove(Guid id, [FromBody] PlayerMoveRequest request)
+    public async Task<ActionResult> ExecutePlayerMove(
+        Guid id,
+        [FromBody] PlayerMoveRequest request)
     {
         await _gameService.ExecutePlayerMoveAsync(
             id,
@@ -70,12 +79,34 @@ public class GamesController : ControllerBase
         return NoContent();
     }
 
+
+    [HttpPost("{id:guid}/bobail-move")]
+    public async Task<ActionResult> ExecuteBobailMove(
+        Guid id,
+        [FromBody] BobailMoveRequest request)
+    {
+        await _gameService.ExecuteBobailMoveAsync(
+            id,
+            request.ToRow,
+            request.ToColumn);
+
+        return NoContent();
+    }
+
+
     [HttpGet("{id:guid}/valid-player-moves")]
-    public async Task<ActionResult> GetValidPlayerMoves(Guid id, int row, int col)
+    public async Task<ActionResult> GetValidPlayerMoves(
+        Guid id,
+        int row,
+        int col)
     {
         var moves = await _gameService.GetValidPlayerMovesAsync(id, row, col);
 
-        return Ok(moves.Select(m => new { row = m.row, column = m.col }));
+        return Ok(moves.Select(m => new
+        {
+            row = m.row,
+            column = m.col
+        }));
     }
 
     [HttpGet("{id:guid}/valid-bobail-moves")]
@@ -85,6 +116,10 @@ public class GamesController : ControllerBase
 
         var moves = game.GetValidBobailMoves();
 
-        return Ok(moves.Select(m => new { row = m.Row, column = m.Column }));
+        return Ok(moves.Select(m => new
+        {
+            row = m.Row,
+            column = m.Column
+        }));
     }
 }
