@@ -2,7 +2,6 @@
 
 public enum PieceType
 {
-    Red,
-    Green,
+    PlayerPiece,
     Bobail
 }

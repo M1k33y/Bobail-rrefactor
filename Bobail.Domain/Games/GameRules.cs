@@ -73,8 +73,7 @@ public static class GameRules
 
     private static bool BelongsToCurrentPlayer(Piece piece, PlayerColor currentTurn)
     {
-        return (piece.Type == PieceType.Red && currentTurn == PlayerColor.Red)
-            || (piece.Type == PieceType.Green && currentTurn == PlayerColor.Green);
+        return piece.Owner == currentTurn;
     }
 
     private static void ValidatePathClear(Game game, Position from, Position to, Direction direction)

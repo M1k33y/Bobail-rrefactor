@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import "../styles/HomePage.css";
 
-
 function HomePage() {
+  const navigate = useNavigate();
+
   return (
     <div className="home-container">
 
@@ -13,30 +15,45 @@ function HomePage() {
         </p>
 
         <div className="hero-actions">
-          <button className="btn btn-primary">
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate("/play/online")}
+          >
             Play Now
           </button>
 
-          <button className="btn btn-secondary">
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/rules")}
+          >
             Learn the Rules
           </button>
         </div>
       </div>
 
       <div className="feature-grid">
-        <div className="feature-card">
+        <div
+          className="feature-card clickable"
+          onClick={() => navigate("/play/local")}
+        >
           <h3>2 Player Game</h3>
           <p>Play locally on the same device.</p>
         </div>
 
-        <div className="feature-card disabled">
+        <div
+          className="feature-card clickable"
+          onClick={() => navigate("/play/online")}
+        >
           <h3>Play Online</h3>
           <p>Compete against other players. (Coming Soon)</p>
         </div>
 
-        <div className="feature-card disabled">
+        <div
+          className="feature-card clickable"
+          onClick={() => navigate("/play/bot")}
+        >
           <h3>Play vs Bot</h3>
-          <p>Challenge the AI. (Coming Soon)</p>
+          <p>Challenge the AI.</p>
         </div>
       </div>
 

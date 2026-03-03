@@ -6,6 +6,25 @@ export function useGame(gameId) {
   const [selected, setSelected] = useState(null);
   const [validMoves, setValidMoves] = useState([]);
 
+
+  useEffect(() => {
+  if (!game) return;
+
+  const isThinking =
+    game.mode === "PlayerVsBot" &&
+    game.botColor === game.currentTurn &&
+    game.status === "InProgress";
+
+  if (!isThinking) return;
+
+  const interval = setInterval(() => {
+    loadGame();
+  }, 500);
+
+  return () => clearInterval(interval);
+
+}, [game]);
+
   useEffect(() => {
     if (!gameId) return;
     loadGame();
@@ -19,27 +38,30 @@ export function useGame(gameId) {
   async function handleCellClick(row, col) {
     if (!game || game.status !== "InProgress") return;
 
+    const isBotGame = game.mode === "PlayerVsBot";
+    const isBotTurn =
+      isBotGame && game.botColor === game.currentTurn;
+
+   
+    if (isBotTurn) return;
+
     const piece = game.pieces.find(
       p => p.row === row && p.column === col
     );
 
-    const clickedType = piece?.type;
-
-    // -------------------------
-    // SELECT PHASE
-    // -------------------------
     if (!selected) {
-      if (!clickedType) return;
+      if (!piece) return;
 
       if (
         game.currentPhase === "PlayerMoveRequired" &&
-        clickedType !== game.currentTurn
+        (piece.type !== "PlayerPiece" ||
+          piece.owner !== game.currentTurn)
       )
         return;
 
       if (
         game.currentPhase === "BobailMoveRequired" &&
-        clickedType !== "Bobail"
+        piece.type !== "Bobail"
       )
         return;
 
@@ -60,52 +82,24 @@ export function useGame(gameId) {
       return;
     }
 
-    // -------------------------
-    // RE-SELECTION
-    // -------------------------
-    if (
-      clickedType &&
-      clickedType === game.currentTurn &&
-      game.currentPhase === "PlayerMoveRequired"
-    ) {
-      const moves = await gameApi.getValidPlayerMoves(gameId, row, col);
-      setSelected({ row, col });
-      setValidMoves(moves);
-      return;
-    }
-
-    // -------------------------
-    // MOVE EXECUTION
-    // -------------------------
     try {
       if (game.currentPhase === "BobailMoveRequired") {
-        const response = await gameApi.bobailMove(gameId, {
+        await gameApi.bobailMove(gameId, {
           toRow: row,
           toColumn: col
         });
-
-        if (!response.ok) {
-          setSelected(null);
-          setValidMoves([]);
-          return;
-        }
       } else {
-        const response = await gameApi.playerMove(gameId, {
+        await gameApi.playerMove(gameId, {
           fromRow: selected.row,
           fromColumn: selected.col,
           toRow: row,
           toColumn: col
         });
-
-        if (!response.ok) {
-          setSelected(null);
-          setValidMoves([]);
-          return;
-        }
       }
 
       setSelected(null);
       setValidMoves([]);
+
       await loadGame();
     } catch (err) {
       console.error(err);
@@ -121,4 +115,3 @@ export function useGame(gameId) {
     handleCellClick
   };
 }
-

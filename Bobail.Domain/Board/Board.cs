@@ -1,4 +1,5 @@
-﻿using Bobail.Domain.Pieces;
+﻿using Bobail.Domain.Games;
+using Bobail.Domain.Pieces;
 
 namespace Bobail.Domain.Board;
 
@@ -17,14 +18,22 @@ public class Board
     {
         // Red row (row 0)
         for (int col = 0; col < 5; col++)
-            _pieces.Add(new Piece(PieceType.Red, new Position(0, col)));
+            _pieces.Add(new Piece(
+                PieceType.PlayerPiece,
+                new Position(0, col),
+                PlayerColor.Red));
 
         // Green row (row 4)
         for (int col = 0; col < 5; col++)
-            _pieces.Add(new Piece(PieceType.Green, new Position(4, col)));
+            _pieces.Add(new Piece(
+                PieceType.PlayerPiece,
+                new Position(4, col),
+                PlayerColor.Green));
 
         // Bobail center
-        _pieces.Add(new Piece(PieceType.Bobail, new Position(2, 2)));
+        _pieces.Add(new Piece(
+            PieceType.Bobail,
+            new Position(2, 2)));
     }
 
     public Piece? GetPieceAt(Position position)

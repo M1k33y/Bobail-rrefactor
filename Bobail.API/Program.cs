@@ -1,7 +1,9 @@
-using Bobail.Application.Interfaces.Repositories;
-using Bobail.Application.Services;
-using Bobail.Infrastructure.Persistence;
 using Bobail.API.Middleware;
+using Bobail.Application.Interfaces.Repositories;
+using Bobail.Application.Interfaces.Services;
+using Bobail.Application.Services;
+using Bobail.Application.Services.Bot;
+using Bobail.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
+builder.Services.AddScoped<IBotService, EasyBotService>();
 builder.Services.AddScoped<GameService>();
 
 // CORS

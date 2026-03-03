@@ -10,25 +10,31 @@ function Cell({ row, col, game, selected, validMoves, onClick }) {
     m => m.row === row && m.column === col
   );
 
-  const className = `
-    cell
-    ${piece?.type === "Red" ? "red" : ""}
-    ${piece?.type === "Green" ? "green" : ""}
-    ${piece?.type === "Bobail" ? "bobail" : ""}
-    ${isSelected ? "selected" : ""}
-    ${isValidMove ? "valid-move clickable" : ""}
-  `;
+  let pieceClass = "";
+
+  if (piece) {
+    if (piece.type === "Bobail") {
+      pieceClass = "bobail";
+    }
+
+    if (piece.type === "PlayerPiece") {
+      pieceClass =
+        piece.owner === "Red"
+          ? "red"
+          : "green";
+    }
+  }
 
   return (
-  <div
-    className={`cell ${isSelected ? "selected" : ""} ${
-      isValidMove ? "valid-move clickable" : ""
-    }`}
-    onClick={() => onClick(row, col)}
-  >
-    {piece && <div className={`piece ${piece.type.toLowerCase()}`} />}
-  </div>
-);
+    <div
+      className={`cell ${isSelected ? "selected" : ""} ${
+        isValidMove ? "valid-move clickable" : ""
+      }`}
+      onClick={() => onClick(row, col)}
+    >
+      {piece && <div className={`piece ${pieceClass}`} />}
+    </div>
+  );
 }
 
 export default Cell;
