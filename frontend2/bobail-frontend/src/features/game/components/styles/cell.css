@@ -1,0 +1,35 @@
+.cell {
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.cell:hover {
+  transform: translateY(-2px);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+/* Checker style board */
+.cell:nth-child(odd) {
+  background-color: var(--cellLight);
+}
+
+.cell:nth-child(even) {
+  background-color: var(--cellDark);
+}
+
+.selected {
+  outline: 3px solid rgba(255,255,255,0.7);
+}
+
+.valid-move {
+  box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.6);
+}

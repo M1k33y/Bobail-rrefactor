@@ -1,5 +1,5 @@
 import Cell from "./Cell";
-
+import "./styles/Board.css";
 function Board({ game, selected, validMoves, onCellClick }) {
   return (
     <div id="board">
