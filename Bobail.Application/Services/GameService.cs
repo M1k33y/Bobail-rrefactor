@@ -3,6 +3,7 @@ using Bobail.Application.Interfaces.Services;
 using Bobail.Domain.Board;
 using Bobail.Domain.Common;
 using Bobail.Domain.Games;
+using Microsoft.Extensions.Logging;
 
 namespace Bobail.Application.Services;
 
@@ -10,16 +11,17 @@ public class GameService : IGameService
 {
     private readonly IGameRepository _repository;
     private readonly IBotService _botService;
+    private readonly ILogger<GameService> _logger;
 
     public GameService(
         IGameRepository repository,
-        IBotService botService)
+        IBotService botService,
+        ILogger<GameService> logger)
     {
         _repository = repository;
         _botService = botService;
+        _logger = logger;
     }
-
- 
 
     public async Task<Guid> CreateGameAsync(
         GameMode mode,
@@ -30,6 +32,10 @@ public class GameService : IGameService
         var game = new Game(mode, difficulty, botColor);
 
         await _repository.AddAsync(game, cancellationToken);
+
+        _logger.LogInformation(
+            "Game created. Id: {GameId}, Mode: {Mode}, Difficulty: {Difficulty}",
+            game.Id, mode, difficulty);
 
         TriggerBotIfNeeded(game);
 
@@ -46,37 +52,20 @@ public class GameService : IGameService
             cancellationToken);
     }
 
-   
-
     public async Task<Game> GetGameAsync(
         Guid gameId,
         CancellationToken cancellationToken = default)
     {
-        var game = await _repository
-            .GetByIdAsync(gameId, cancellationToken);
+        var game = await _repository.GetByIdAsync(gameId, cancellationToken);
 
         if (game is null)
+        {
+            _logger.LogWarning("Game not found. Id: {GameId}", gameId);
             throw new DomainException("Game not found.");
+        }
 
         return game;
     }
-
-    public async Task<List<(int row, int col)>> GetValidPlayerMovesAsync(
-        Guid gameId,
-        int row,
-        int col)
-    {
-        var game = await GetGameAsync(gameId);
-
-        var moves = game.GetValidPlayerMoves(
-            new Position(row, col));
-
-        return moves
-            .Select(m => (m.Row, m.Column))
-            .ToList();
-    }
-
-  
 
     public async Task ExecutePlayerMoveAsync(
         Guid gameId,
@@ -87,6 +76,10 @@ public class GameService : IGameService
         CancellationToken cancellationToken = default)
     {
         var game = await GetGameAsync(gameId, cancellationToken);
+
+        _logger.LogInformation(
+            "Player move. GameId: {GameId}, From: ({FromRow},{FromCol}) -> To: ({ToRow},{ToCol})",
+            gameId, fromRow, fromColumn, toRow, toColumn);
 
         var from = new Position(fromRow, fromColumn);
         var to = new Position(toRow, toColumn);
@@ -106,6 +99,10 @@ public class GameService : IGameService
     {
         var game = await GetGameAsync(gameId, cancellationToken);
 
+        _logger.LogInformation(
+            "Bobail move. GameId: {GameId}, Target: ({Row},{Col})",
+            gameId, toRow, toColumn);
+
         var target = new Position(toRow, toColumn);
 
         game.ExecuteBobailMove(target);
@@ -115,19 +112,30 @@ public class GameService : IGameService
         TriggerBotIfNeeded(game);
     }
 
-    
-
     private void TriggerBotIfNeeded(Game game)
     {
         if (!game.IsBotTurn() ||
             game.Status != GameStatus.InProgress)
             return;
 
+        _logger.LogInformation(
+            "Bot triggered. GameId: {GameId}",
+            game.Id);
+
         _ = Task.Run(async () =>
         {
-            await ExecuteBotCycleAsync(
-                game.Id,
-                CancellationToken.None);
+            try
+            {
+                await ExecuteBotCycleAsync(
+                    game.Id,
+                    CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error during bot cycle. GameId: {GameId}",
+                    game.Id);
+            }
         });
     }
 
@@ -143,11 +151,17 @@ public class GameService : IGameService
             game.Status != GameStatus.InProgress)
             return;
 
-       
+        _logger.LogInformation(
+            "Bot cycle started. GameId: {GameId}",
+            gameId);
+
         await _botService.ExecuteSingleMoveAsync(game);
         await _repository.UpdateAsync(game, cancellationToken);
 
-        
+        _logger.LogInformation(
+            "Bot first move executed. GameId: {GameId}",
+            gameId);
+
         if (game.IsBotTurn() &&
             game.Status == GameStatus.InProgress)
         {
@@ -155,6 +169,25 @@ public class GameService : IGameService
 
             await _botService.ExecuteSingleMoveAsync(game);
             await _repository.UpdateAsync(game, cancellationToken);
+
+            _logger.LogInformation(
+                "Bot second move executed. GameId: {GameId}",
+                gameId);
         }
+    }
+
+    public async Task<List<(int row, int col)>> GetValidPlayerMovesAsync(
+    Guid gameId,
+    int row,
+    int col)
+    {
+        var game = await GetGameAsync(gameId);
+
+        var moves = game.GetValidPlayerMoves(
+            new Position(row, col));
+
+        return moves
+            .Select(m => (m.Row, m.Column))
+            .ToList();
     }
 }
