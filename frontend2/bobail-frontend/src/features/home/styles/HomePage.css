@@ -1,5 +1,24 @@
+:root {
+  --accent: #3b82f6;
+}
+
 .home-container {
   max-width: 1000px;
+  position: relative;
+  z-index: 1;
+}
+
+.home-container::before {
+  content: "";
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(59,130,246,0.15), transparent);
+  filter: blur(80px);
+  z-index: -1; 
+  pointer-events: none; 
 }
 
 .hero {
@@ -8,14 +27,17 @@
 }
 
 .hero h1 {
-  font-size: 42px;
-  margin-bottom: 10px;
+  background: linear-gradient(90deg, #fff, #3b82f6);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero p {
   max-width: 500px;
-  opacity: 0.8;
+  opacity: 0.75;
   margin-bottom: 30px;
+  line-height: 1.6;
 }
 
 .hero-actions {
@@ -32,14 +54,18 @@
 .feature-card {
   padding: 20px;
   border-radius: 14px;
-  background: rgba(255,255,255,0.05);
-  transition: all 0.2s ease;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.25s ease;
   cursor: pointer;
+  backdrop-filter: blur(6px);
 }
 
 .feature-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px) scale(1.02);
   background: rgba(255,255,255,0.08);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+  border-color: rgba(59,130,246,0.4);
 }
 
 .feature-card.disabled {
@@ -55,4 +81,17 @@
 .clickable:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+button {
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59,130,246,0.3);
+}
+
+button:active {
+  transform: scale(0.96);
 }

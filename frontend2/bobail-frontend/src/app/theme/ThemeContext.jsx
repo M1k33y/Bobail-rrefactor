@@ -9,7 +9,7 @@ const appThemes = {
   sidebar: "#1f2937"          
 },
 light: {
-  background: "#ede8d0",      
+  background: "#d3e2ee",      
   text: "#111827",            
   sidebar: "#e5e7eb"          
 },
