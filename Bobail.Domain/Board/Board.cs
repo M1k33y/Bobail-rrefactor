@@ -1,51 +1,58 @@
 ﻿using Bobail.Domain.Games;
 using Bobail.Domain.Pieces;
+using System.Text.Json.Serialization;
 
 namespace Bobail.Domain.Board;
 
 public class Board
 {
-    private readonly List<Piece> _pieces;
+    
+    public List<Piece> Pieces { get; set; }
 
-    public IReadOnlyCollection<Piece> Pieces => _pieces.AsReadOnly();
-
-    // constructor normal
-    public Board()
+    [JsonConstructor]
+    public Board(List<Piece> pieces)
     {
-        _pieces = new List<Piece>();
-        Initialize();
+        Pieces = pieces;
     }
 
-    // constructor pt clone
-    private Board(List<Piece> pieces)
+    public Board()
     {
-        _pieces = pieces;
+        Pieces = new List<Piece>();
+        Initialize();
     }
 
     private void Initialize()
     {
-        // Red row (row 0)
         for (int col = 0; col < 5; col++)
-            _pieces.Add(new Piece(
+            Pieces.Add(new Piece(
                 PieceType.PlayerPiece,
                 new Position(0, col),
                 PlayerColor.Red));
 
-        // Green row (row 4)
         for (int col = 0; col < 5; col++)
-            _pieces.Add(new Piece(
+            Pieces.Add(new Piece(
                 PieceType.PlayerPiece,
                 new Position(4, col),
                 PlayerColor.Green));
 
-        // Bobail center
-        _pieces.Add(new Piece(
+        Pieces.Add(new Piece(
             PieceType.Bobail,
             new Position(2, 2)));
     }
 
     public Piece? GetPieceAt(Position position)
-        => _pieces.FirstOrDefault(p => p.Position.Equals(position));
+    {
+        Console.WriteLine($"SEARCHING: {position.Row},{position.Column}");
+
+        foreach (var p in Pieces)
+        {
+            Console.WriteLine($"PIECE: {p.Position.Row},{p.Position.Column}");
+        }
+
+        return Pieces.FirstOrDefault(p =>
+            p.Position.Row == position.Row &&
+            p.Position.Column == position.Column);
+    }
 
     public bool IsEmpty(Position position)
         => GetPieceAt(position) == null;
@@ -57,7 +64,7 @@ public class Board
 
     public Board Clone()
     {
-        var clonedPieces = _pieces
+        var clonedPieces = Pieces
             .Select(p => p.Clone())
             .ToList();
 

@@ -19,6 +19,8 @@ public class InMemoryGameRepository : IGameRepository
 
     public Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
+
+        Console.WriteLine($"[MEMORY] GetById: {id}");
         _storage.TryGetValue(id, out var game);
         return Task.FromResult(game);
     }

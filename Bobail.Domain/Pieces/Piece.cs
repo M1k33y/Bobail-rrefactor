@@ -1,13 +1,13 @@
-﻿using Bobail.Domain.Common;
-using Bobail.Domain.Board;
+﻿using Bobail.Domain.Board;
+using Bobail.Domain.Common;
 using Bobail.Domain.Games;
-
-namespace Bobail.Domain.Pieces;
+using Bobail.Domain.Pieces;
+using System.Text.Json.Serialization;
 
 public class Piece : Entity
 {
-    public PieceType Type { get; }
-    public PlayerColor? Owner { get; }
+    public PieceType Type { get; private set; }
+    public PlayerColor? Owner { get; private set; }
     public Position Position { get; private set; }
 
     public bool IsBobail => Type == PieceType.Bobail;
@@ -25,6 +25,7 @@ public class Piece : Entity
         Owner = owner;
     }
 
+    
     public void MoveTo(Position newPosition)
     {
         Position = newPosition;

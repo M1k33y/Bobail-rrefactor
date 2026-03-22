@@ -4,6 +4,7 @@ using Bobail.Domain.Board;
 using Bobail.Domain.Common;
 using Bobail.Domain.Games;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Bobail.Application.Services;
 
@@ -11,16 +12,19 @@ public class GameService : IGameService
 {
     private readonly IGameRepository _repository;
     private readonly IBotService _botService;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GameService> _logger;
 
     public GameService(
-        IGameRepository repository,
-        IBotService botService,
-        ILogger<GameService> logger)
+    IGameRepository repository,
+    IBotService botService,
+    ILogger<GameService> logger,
+    IServiceScopeFactory scopeFactory)
     {
         _repository = repository;
         _botService = botService;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<Guid> CreateGameAsync(
@@ -76,7 +80,7 @@ public class GameService : IGameService
         CancellationToken cancellationToken = default)
     {
         var game = await GetGameAsync(gameId, cancellationToken);
-
+        Console.WriteLine($"Game instance: {game.GetHashCode()}");
         _logger.LogInformation(
             "Player move. GameId: {GameId}, From: ({FromRow},{FromCol}) -> To: ({ToRow},{ToCol})",
             gameId, fromRow, fromColumn, toRow, toColumn);
@@ -124,9 +128,14 @@ public class GameService : IGameService
 
         _ = Task.Run(async () =>
         {
+            using var scope = _scopeFactory.CreateScope();
+
+            var gameService = scope.ServiceProvider
+                .GetRequiredService<IGameService>();
+
             try
             {
-                await ExecuteBotCycleAsync(
+                await gameService.ExecuteBotCycleAsync(
                     game.Id,
                     CancellationToken.None);
             }
@@ -139,7 +148,7 @@ public class GameService : IGameService
         });
     }
 
-    private async Task ExecuteBotCycleAsync(
+   public async Task ExecuteBotCycleAsync(
         Guid gameId,
         CancellationToken cancellationToken)
     {

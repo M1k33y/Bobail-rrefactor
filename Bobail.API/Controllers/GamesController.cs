@@ -1,6 +1,5 @@
-﻿using Bobail.API.DTOs;
+﻿using Bobail.Application.DTOs;
 using Bobail.Application.Interfaces.Services;
-using Bobail.Application.Services;
 using Bobail.Domain.Games;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +22,10 @@ public class GamesController : ControllerBase
     {
         var gameId = await _gameService.CreateGameAsync();
 
-        return Ok(new { gameId });
+        return Ok(new CreateGameResponse
+        {
+            GameId = gameId
+        });
     }
 
     [HttpPost("vs-bot")]
@@ -35,7 +37,10 @@ public class GamesController : ControllerBase
         request.Difficulty,
         request.BotColor);
 
-        return Ok(new { gameId });
+        return Ok(new CreateGameResponse
+        {
+            GameId = gameId
+        });
     }
 
 
@@ -44,24 +49,27 @@ public class GamesController : ControllerBase
     {
         var game = await _gameService.GetGameAsync(id);
 
-        return Ok(new
+        var response = new GameResponse
         {
-            game.Id,
-            game.Status,
-            game.CurrentTurn,
-            game.Winner,
-            game.IsFirstTurn,
-            game.CurrentPhase,
-            game.Mode,
-            game.BotColor,
-            Pieces = game.Board.Pieces.Select(p => new
+            Id = game.Id,
+            Status = game.Status.ToString(),
+            CurrentTurn = game.CurrentTurn.ToString(),
+            Winner = game.Winner?.ToString(),
+            IsFirstTurn = game.IsFirstTurn,
+            CurrentPhase = game.CurrentPhase.ToString(),
+            Mode = game.Mode.ToString(),
+            BotColor = game.BotColor?.ToString(),   
+
+            Pieces = game.Board.Pieces.Select(p => new PieceDto
             {
-                p.Type,
-                p.Owner,
-                p.Position.Row,
-                p.Position.Column
-            })
-        });
+                Type = p.Type.ToString(),
+                Owner = p.Owner?.ToString(),
+                Row = p.Position.Row,
+                Column = p.Position.Column
+            }).ToList()
+        };
+
+        return Ok(response);
     }
 
 

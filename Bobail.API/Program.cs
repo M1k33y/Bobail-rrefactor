@@ -5,6 +5,7 @@ using Bobail.Application.Services;
 using Bobail.Application.Services.Bot;
 using Bobail.Infrastructure.Bots;
 using Bobail.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
+//builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IBotService, BotService>();
 builder.Services.AddScoped<MediumBoardEvaluator>();
@@ -22,6 +23,11 @@ builder.Services.AddScoped<IBotStrategy, EasyBotStrategy>();
 builder.Services.AddScoped<IBotStrategy, MediumBotStrategy>();
 builder.Services.AddScoped<IBotStrategy, HardBotStrategy>();
 
+
+builder.Services.AddDbContext<GameDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddScoped<IGameRepository, SqlGameRepository>();
 
 // CORS
 builder.Services.AddCors(options =>

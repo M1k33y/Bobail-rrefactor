@@ -8,7 +8,10 @@ function Sidebar() {
 
     return (
         <div className="sidebar">
-            <div className="logo">Bobail</div>
+
+            <NavLink to="/" className="logo">
+                Bobail
+            </NavLink>
 
             <div
                 className="menu-group"

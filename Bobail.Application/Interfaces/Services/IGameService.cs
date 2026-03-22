@@ -35,4 +35,7 @@ public interface IGameService
         Guid gameId,
         int row,
         int col);
+    Task ExecuteBotCycleAsync(  
+    Guid gameId,
+    CancellationToken cancellationToken);
 }

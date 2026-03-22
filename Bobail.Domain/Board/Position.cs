@@ -1,12 +1,13 @@
-﻿using Bobail.Domain.Common;
-
-namespace Bobail.Domain.Board;
+﻿using Bobail.Domain.Board;
+using Bobail.Domain.Common;
+using System.Text.Json.Serialization;
 
 public sealed class Position : ValueObject
 {
-    public int Row { get; }
-    public int Column { get; }
+    public int Row { get; private set; }
+    public int Column { get; private set; }
 
+    [JsonConstructor]
     public Position(int row, int column)
     {
         if (row < 0 || row > 4)
@@ -19,6 +20,7 @@ public sealed class Position : ValueObject
         Column = column;
     }
 
+    private Position() { } 
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Row;

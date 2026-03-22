@@ -11,12 +11,20 @@ export const gameApi = {
         return res.json();
     },
 
-    playerMove: async (gameId, payload) =>
-        fetch(`${API}/${gameId}/player-move`, {
+    playerMove: async (gameId, payload) => {
+        const res = await fetch(`${API}/${gameId}/player-move`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
-        }),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error);
+        }
+
+        return;
+    },
 
     getValidPlayerMoves: async (gameId, row, col) => {
         const res = await fetch(
@@ -32,10 +40,18 @@ export const gameApi = {
         return res.json();
     },
 
-    bobailMove: async (gameId, payload) =>
-        fetch(`${API}/${gameId}/bobail-move`, {
+    bobailMove: async (gameId, payload) => {
+        const res = await fetch(`${API}/${gameId}/bobail-move`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
-        })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error);
+        }
+
+        return;
+    }
 };

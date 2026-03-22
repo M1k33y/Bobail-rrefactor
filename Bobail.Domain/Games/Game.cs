@@ -1,11 +1,11 @@
-﻿using Bobail.Domain.Board;
+﻿using BoardNamespace = Bobail.Domain.Board;
 using Bobail.Domain.Common;
-
+using System.Text.Json.Serialization;
 namespace Bobail.Domain.Games;
 
 public class Game : Entity
 {
-    public Board.Board Board { get; }
+    public BoardNamespace.Board Board { get; }
     public PlayerColor CurrentTurn { get; private set; }
     public bool IsFirstTurn { get; private set; }
     public GameStatus Status { get; private set; }
@@ -16,35 +16,21 @@ public class Game : Entity
     public BotDifficulty? BotDifficulty { get; private set; }
     public PlayerColor? BotColor { get; private set; }
 
-    public Game(
-    GameMode mode = GameMode.LocalMultiplayer,
-    BotDifficulty? botDifficulty = null,
-    PlayerColor? botColor = null)
-    {
-        Board = new Board.Board();
-
-        CurrentTurn = PlayerColor.Red;
-        IsFirstTurn = true;
-        Status = GameStatus.InProgress;
-        CurrentPhase = TurnPhase.PlayerMoveRequired;
-
-        Mode = mode;
-        BotDifficulty = botDifficulty;
-        BotColor = botColor;
-    }
-
-    //constructor de clone
+    [JsonConstructor]
     private Game(
+    Guid id, 
     GameMode mode,
     BotDifficulty? botDifficulty,
     PlayerColor? botColor,
-    Board.Board board,
+    BoardNamespace.Board board,
     PlayerColor currentTurn,
     bool isFirstTurn,
     GameStatus status,
     TurnPhase currentPhase,
     PlayerColor? winner)
     {
+        Id = id; 
+
         Board = board;
 
         Mode = mode;
@@ -56,6 +42,24 @@ public class Game : Entity
         Status = status;
         CurrentPhase = currentPhase;
         Winner = winner;
+    }
+    public Game(
+    GameMode mode = GameMode.LocalMultiplayer,
+    BotDifficulty? botDifficulty = null,
+    PlayerColor? botColor = null)
+    {
+
+        GenerateId();
+        Board = new BoardNamespace.Board();
+
+        CurrentTurn = PlayerColor.Red;
+        IsFirstTurn = true;
+        Status = GameStatus.InProgress;
+        CurrentPhase = TurnPhase.PlayerMoveRequired;
+
+        Mode = mode;
+        BotDifficulty = botDifficulty;
+        BotColor = botColor;
     }
 
     public bool IsBotTurn()
@@ -136,6 +140,7 @@ public class Game : Entity
     public Game Clone()
     {
         return new Game(
+            Id, 
             Mode,
             BotDifficulty,
             BotColor,

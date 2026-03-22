@@ -21,6 +21,11 @@ public class BotService : IBotService
 
     public Task ExecuteSingleMoveAsync(Game game)
     {
+        Console.WriteLine($"BOT MOVE START → Turn: {game.CurrentTurn}, Phase: {game.CurrentPhase}");
+
+        var moves = game.GetValidBobailMoves(); 
+        Console.WriteLine($"BOT: found {moves.Count} moves");
+
         if (!game.BotDifficulty.HasValue)
             throw new InvalidOperationException("Bot difficulty not set.");
 
@@ -39,7 +44,7 @@ public class BotService : IBotService
             game.ExecuteBobailMove(move.To);
         else
             game.ExecutePlayerMove(move.From, move.To);
-
+        Console.WriteLine($"BOT MOVE END → Turn: {game.CurrentTurn}, Phase: {game.CurrentPhase}");
         return Task.CompletedTask;
     }
 }

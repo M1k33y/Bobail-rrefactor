@@ -28,11 +28,10 @@ public static class GameRules
         int deltaRow = Math.Abs(target.Row - from.Row);
         int deltaCol = Math.Abs(target.Column - from.Column);
 
-        // Must move exactly one square
+        
         if (deltaRow > 1 || deltaCol > 1)
             throw new DomainException("Bobail can only move one square.");
 
-        // Must move at least one axis
         if (deltaRow == 0 && deltaCol == 0)
             throw new DomainException("Invalid Bobail movement.");
     }
@@ -98,9 +97,9 @@ public static class GameRules
 
     public static void ApplyPlayerMove(Game game, Position from, Position to)
     {
-        var piece = game.Board.GetPieceAt(from)
-            ?? throw new DomainException("Piece not found.");
-
+        var piece = game.Board.GetPieceAt(from);
+        Console.WriteLine(piece == null ? "PIECE NOT FOUND" : "PIECE FOUND");
+        Console.WriteLine($"Moving piece from {from.Row},{from.Column} to {to.Row},{to.Column}");
         game.Board.MovePiece(piece, to);
     }
 

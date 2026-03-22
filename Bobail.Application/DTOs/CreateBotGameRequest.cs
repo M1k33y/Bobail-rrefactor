@@ -1,6 +1,6 @@
 ﻿using Bobail.Domain.Games;
 
-namespace Bobail.API.DTOs;
+namespace Bobail.Application.DTOs;
 
 public class CreateBotGameRequest
 {
