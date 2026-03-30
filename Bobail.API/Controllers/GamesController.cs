@@ -73,8 +73,6 @@ public class GamesController : ControllerBase
     }
 
 
-
-
     [HttpPost("{id:guid}/player-move")]
     public async Task<ActionResult> ExecutePlayerMove(
         Guid id,

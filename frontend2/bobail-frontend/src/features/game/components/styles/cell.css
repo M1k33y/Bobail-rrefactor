@@ -17,7 +17,6 @@
   cursor: pointer;
 }
 
-/* Checker style board */
 .cell:nth-child(odd) {
   background-color: var(--cellLight);
 }

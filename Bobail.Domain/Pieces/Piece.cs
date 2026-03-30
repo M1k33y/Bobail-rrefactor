@@ -14,6 +14,8 @@ public class Piece : Entity
 
     public Piece(PieceType type, Position position, PlayerColor? owner = null)
     {
+        Id = Guid.NewGuid();
+
         if (type == PieceType.PlayerPiece && owner is null)
             throw new DomainException("PlayerPiece must have an owner.");
 

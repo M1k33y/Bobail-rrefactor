@@ -1,6 +1,5 @@
-﻿using Bobail.Application.Interfaces.Services;
-using Bobail.Domain.Games;
-using Bobail.Domain.Board;
+﻿using Bobail.Domain.Games;
+
 
 public class MediumBoardEvaluator : IBoardEvaluator
 {
@@ -9,7 +8,7 @@ public class MediumBoardEvaluator : IBoardEvaluator
 
     public int Evaluate(Game game, PlayerColor botColor)
     {
-        // win/loss check
+     
         if (game.Status == GameStatus.Finished)
         {
             if (game.Winner == botColor)
@@ -21,8 +20,9 @@ public class MediumBoardEvaluator : IBoardEvaluator
         int score = 0;
 
         score += EvaluateBobailProgress(game, botColor);
-        score += EvaluateBobailMobility(game);
+        score += EvaluateBobailMobility(game,botColor);
         score += EvaluatePotentialBlock(game, botColor);
+        
 
         return score;
     }
@@ -44,17 +44,23 @@ public class MediumBoardEvaluator : IBoardEvaluator
 
         int progressScore = (maxDistance - distance) * 200;
 
+        if (distance == 1)
+            progressScore += 10000;
+
         return progressScore;
     }
-
-   
-    private int EvaluateBobailMobility(Game game)
+    private int EvaluateBobailMobility(Game game, PlayerColor botColor)
     {
         var moves = game.GetValidBobailMoves();
 
-        int mobilityPenalty = moves.Count * -50;
+        int score = 0;
 
-        return mobilityPenalty;
+        if (game.CurrentTurn == botColor)
+            score -= moves.Count * 20;
+        else
+            score += moves.Count * 20;
+        
+        return score;
     }
 
 
@@ -66,13 +72,15 @@ public class MediumBoardEvaluator : IBoardEvaluator
         if (moves.Count == 0)
         {
             if (game.CurrentTurn != botColor)
-                return 50000; // bot a blocat adversarul
+                return 50000; 
 
             return -50000; // bot s-a auto-blocat
         }
 
         return 0;
     }
+
+
 
     
 }

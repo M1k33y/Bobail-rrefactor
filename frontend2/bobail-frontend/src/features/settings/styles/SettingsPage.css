@@ -27,7 +27,6 @@
   margin-bottom: 10px;
 }
 
-/* App previews */
 .preview-dark {
   background: linear-gradient(#111827, #1f2937);
 }
@@ -40,7 +39,7 @@
   background: linear-gradient(#0f172a, #1e293b);
 }
 
-/* Board previews */
+
 .preview-board-classic {
   background: linear-gradient(45deg, #374151 50%, #111827 50%);
 }

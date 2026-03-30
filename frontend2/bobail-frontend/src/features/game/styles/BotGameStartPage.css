@@ -31,7 +31,7 @@
   box-shadow: 0 0 12px rgba(255,255,255,0.4);
 }
 
-/* Difficulty */
+
 .difficulty-easy {
   background: #1e7e34;
   color: white;
@@ -47,7 +47,7 @@
   color: white;
 }
 
-/* Colors */
+
 .color-red {
   background: #b91c1c;
   color: white;
@@ -58,7 +58,6 @@
   color: white;
 }
 
-/* Start button spacing */
 .start-button-wrapper {
   margin-top: 2.5rem;
 }

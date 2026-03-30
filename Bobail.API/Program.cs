@@ -10,26 +10,24 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-//builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
-builder.Services.AddScoped<IGameService, GameService>();
-builder.Services.AddScoped<IBotService, BotService>();
-builder.Services.AddScoped<MediumBoardEvaluator>();
-builder.Services.AddScoped<HardBoardEvaluator>();
-builder.Services.AddScoped<IBotStrategy, EasyBotStrategy>();
-builder.Services.AddScoped<IBotStrategy, MediumBotStrategy>();
-builder.Services.AddScoped<IBotStrategy, HardBotStrategy>();
-
 
 builder.Services.AddDbContext<GameDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 builder.Services.AddScoped<IGameRepository, SqlGameRepository>();
 
-// CORS
+builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IBotService, BotService>();
+
+builder.Services.AddScoped<MediumBoardEvaluator>();
+builder.Services.AddScoped<HardBoardEvaluator>();
+
+builder.Services.AddScoped<IBotStrategy, EasyBotStrategy>();
+builder.Services.AddScoped<IBotStrategy, MediumBotStrategy>();
+builder.Services.AddScoped<IBotStrategy, HardBotStrategy>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -50,23 +48,16 @@ builder.Services.AddControllers()
 
 var app = builder.Build();
 
-
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-
-app.UseCors("AllowAll");
-
-app.UseAuthorization();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-
+app.UseHttpsRedirection();
+app.UseCors("AllowAll");
+app.UseAuthorization();
 app.MapControllers();
-
 app.Run();

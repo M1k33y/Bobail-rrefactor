@@ -123,7 +123,6 @@ public class Game : Entity
 
         GameRules.ValidatePlayerMove(this, from, to);
         GameRules.ApplyPlayerMove(this, from, to);
-
         GameRules.CheckVictory(this);
 
         if (Status == GameStatus.InProgress)

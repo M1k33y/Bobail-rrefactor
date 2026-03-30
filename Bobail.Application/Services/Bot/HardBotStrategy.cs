@@ -1,5 +1,4 @@
-﻿using Bobail.Application.Interfaces.Services;
-using Bobail.Application.Services.Bot;
+﻿using Bobail.Application.Services.Bot;
 using Bobail.Domain.Games;
 using Microsoft.Extensions.Logging;
 
@@ -7,6 +6,7 @@ namespace Bobail.Infrastructure.Bots;
 
 public class HardBotStrategy : IBotStrategy
 {
+
     private readonly HardBoardEvaluator _evaluator;
     private readonly ILogger<HardBotStrategy> _logger;
 
@@ -124,7 +124,6 @@ public class HardBotStrategy : IBotStrategy
             return minEval;
         }
     }
-
 
     private List<(BotMove move, Game clone, int score)> PrepareOrderedMoves(
         Game game,

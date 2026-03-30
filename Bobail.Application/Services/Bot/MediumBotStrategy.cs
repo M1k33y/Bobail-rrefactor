@@ -1,9 +1,5 @@
-﻿using Bobail.Application.Services;
-using Bobail.Application.Interfaces.Services;
-using Bobail.Application.Services.Bot;
-using Bobail.Domain.Board;
+﻿using Bobail.Application.Services.Bot;
 using Bobail.Domain.Games;
-using Bobail.Domain.Pieces;
 
 namespace Bobail.Infrastructure.Bots;
 
@@ -37,27 +33,20 @@ public class MediumBotStrategy : IBotStrategy
             int score = _evaluator.Evaluate(clone, game.CurrentTurn);
 
             if (AllowsImmediateOpponentWin(clone, game.CurrentTurn))
-            {
                 score -= 80000;
-            }
 
             if (CanWinNextTurn(clone, game.CurrentTurn))
-            {
                 score += 60000;
-            }
-
+           
             if (score > bestScore)
             {
                 bestScore = score;
                 bestMove = move;
             }
-
-
         }
 
         return bestMove;
     }
-
 
     private bool AllowsImmediateOpponentWin(Game gameAfterBotMove, PlayerColor botColor)
     {
@@ -149,13 +138,9 @@ public class MediumBotStrategy : IBotStrategy
     private void ApplyMove(Game clone, BotMove move)
     {
         if (move.IsBobailMove)
-        {
             clone.ExecuteBobailMove(move.To);
-        }
         else
-        {
             clone.ExecutePlayerMove(move.From, move.To);
-        }
     }
 
     private bool CanWinNextTurn(Game gameAfterMove, PlayerColor botColor)

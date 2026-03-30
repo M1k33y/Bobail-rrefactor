@@ -174,7 +174,6 @@ public class GameService : IGameService
         if (game.IsBotTurn() &&
             game.Status == GameStatus.InProgress)
         {
-            await Task.Delay(600, cancellationToken);
 
             await _botService.ExecuteSingleMoveAsync(game);
             await _repository.UpdateAsync(game, cancellationToken);

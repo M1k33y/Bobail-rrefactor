@@ -8,7 +8,6 @@ namespace Bobail.Application.Services.Bot;
 public class EasyBotStrategy : IBotStrategy
 {
     private readonly Random _random = new();
-
     public BotDifficulty Difficulty => BotDifficulty.Easy;
 
     public BotMove DecideMove(Game game)

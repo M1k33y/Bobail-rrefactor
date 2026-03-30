@@ -42,13 +42,6 @@ public class Board
 
     public Piece? GetPieceAt(Position position)
     {
-        Console.WriteLine($"SEARCHING: {position.Row},{position.Column}");
-
-        foreach (var p in Pieces)
-        {
-            Console.WriteLine($"PIECE: {p.Position.Row},{p.Position.Column}");
-        }
-
         return Pieces.FirstOrDefault(p =>
             p.Position.Row == position.Row &&
             p.Position.Column == position.Column);

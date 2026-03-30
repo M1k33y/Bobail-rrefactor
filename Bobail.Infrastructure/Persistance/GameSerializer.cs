@@ -16,9 +16,6 @@ public static class GameSerializer
     {
         var json = JsonSerializer.Serialize(game, Options);
 
-        Console.WriteLine("SAVED JSON:");
-        Console.WriteLine(json); 
-
         return json;
     }
 

@@ -40,17 +40,6 @@ public class SqlGameRepository : IGameRepository
         var piece = game.Board.Pieces
             .FirstOrDefault(p => p.Position.Row == 3 && p.Position.Column == 0);
 
-        if (piece != null)
-        {
-            Console.WriteLine($"CHECK AFTER LOAD: {piece.Position.Row},{piece.Position.Column}");
-        }
-        else
-        {
-            Console.WriteLine("Piece not found at 3,0");
-        }
-
-        Console.WriteLine($"[AFTER DESERIALIZE] Id: {game.Id}");
-
         return game;
     }
 

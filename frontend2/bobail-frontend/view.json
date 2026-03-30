@@ -1,0 +1,125 @@
+{
+    "board": {
+        "pieces": [
+            {
+                "type": 0,
+                "owner": 0,
+                "position": {
+                    "row": 0,
+                    "column": 0
+                },
+                "isBobail": false,
+                "id": "ab22be05-5650-4dc1-859e-34dd76db89e9"
+            },
+            {
+                "type": 0,
+                "owner": 0,
+                "position": {
+                    "row": 0,
+                    "column": 1
+                },
+                "isBobail": false,
+                "id": "82917dcd-40b1-494e-8cf3-edcb20bffa8e"
+            },
+            {
+                "type": 0,
+                "owner": 0,
+                "position": {
+                    "row": 0,
+                    "column": 2
+                },
+                "isBobail": false,
+                "id": "fdbf42d7-c8cf-47b9-8930-e3e6a53424e3"
+            },
+            {
+                "type": 0,
+                "owner": 0,
+                "position": {
+                    "row": 0,
+                    "column": 3
+                },
+                "isBobail": false,
+                "id": "3d2c0b96-3c78-4b50-9cd3-9894b7e13ca9"
+            },
+            {
+                "type": 0,
+                "owner": 0,
+                "position": {
+                    "row": 0,
+                    "column": 4
+                },
+                "isBobail": false,
+                "id": "fc9a135a-ea44-4da3-a770-e81be138a86d"
+            },
+            {
+                "type": 0,
+                "owner": 1,
+                "position": {
+                    "row": 4,
+                    "column": 0
+                },
+                "isBobail": false,
+                "id": "59134cf3-774c-42a6-ac78-e5dd8aa5cb82"
+            },
+            {
+                "type": 0,
+                "owner": 1,
+                "position": {
+                    "row": 4,
+                    "column": 1
+                },
+                "isBobail": false,
+                "id": "e26f0132-996e-499a-b3fd-f5f72134f9d8"
+            },
+            {
+                "type": 0,
+                "owner": 1,
+                "position": {
+                    "row": 4,
+                    "column": 2
+                },
+                "isBobail": false,
+                "id": "b3fb493a-b77d-4a21-b191-94e779885bf0"
+            },
+            {
+                "type": 0,
+                "owner": 1,
+                "position": {
+                    "row": 4,
+                    "column": 3
+                },
+                "isBobail": false,
+                "id": "50af7cb7-44ad-4241-9af9-c92286127581"
+            },
+            {
+                "type": 0,
+                "owner": 1,
+                "position": {
+                    "row": 4,
+                    "column": 4
+                },
+                "isBobail": false,
+                "id": "f274a70a-2040-4b76-8481-ece940ceacfe"
+            },
+            {
+                "type": 1,
+                "owner": null,
+                "position": {
+                    "row": 2,
+                    "column": 2
+                },
+                "isBobail": true,
+                "id": "a57cea47-b393-45c3-90d4-ae0a0df6c82a"
+            }
+        ]
+    },
+    "currentTurn": 0,
+    "isFirstTurn": true,
+    "status": 1,
+    "winner": null,
+    "currentPhase": 1,
+    "mode": 0,
+    "botDifficulty": null,
+    "botColor": null,
+    "id": "03d00635-6b0d-40ad-a4d1-0b391686102e"
+}

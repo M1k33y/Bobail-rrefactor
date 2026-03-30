@@ -75,19 +75,6 @@ public static class GameRules
         return piece.Owner == currentTurn;
     }
 
-    private static void ValidatePathClear(Game game, Position from, Position to, Direction direction)
-    {
-        var current = from.Move(direction);
-
-        while (!current.Equals(to))
-        {
-            if (!game.Board.IsEmpty(current))
-                throw new DomainException("Cannot jump over other pieces.");
-
-            current = current.Move(direction);
-        }
-    }
-
     public static void ApplyBobailMove(Game game, Position target)
     {
         var bobail = game.Board.Pieces.First(p => p.IsBobail);
@@ -134,7 +121,7 @@ public static class GameRules
                 return false; // exista mutare posibila
         }
 
-        return true; // niciun pătrat liber
+        return true; // niciun patrat liber
     }
 
     public static void CheckVictory(Game game)
