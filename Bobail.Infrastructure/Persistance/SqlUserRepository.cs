@@ -20,7 +20,8 @@ public class SqlUserRepository : IUserRepository
             Email = user.Email,
             PasswordHash = user.PasswordHash,
             Role = user.Role,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            Nickname = user.Nickname
         };
 
         _context.Users.Add(entity);
@@ -41,7 +42,8 @@ public class SqlUserRepository : IUserRepository
             Email = entity.Email,
             PasswordHash = entity.PasswordHash,
             Role = entity.Role,
-            CreatedAt = entity.CreatedAt
+            CreatedAt = entity.CreatedAt,
+            Nickname = entity.Nickname
         };
     }
 }

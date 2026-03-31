@@ -5,6 +5,7 @@ using Bobail.Application.Services;
 using Bobail.Application.Services.Bot;
 using Bobail.Infrastructure.Bots;
 using Bobail.Infrastructure.Persistence;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -66,6 +67,9 @@ builder.Services.AddScoped<IBotStrategy, EasyBotStrategy>();
 builder.Services.AddScoped<IBotStrategy, MediumBotStrategy>();
 builder.Services.AddScoped<IBotStrategy, HardBotStrategy>();
 
+builder.Services.AddScoped<IValidator<(string, string, string)>, RegisterValidator>();
+builder.Services.AddScoped<IValidator<(string, string)>, LoginValidator>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -126,3 +130,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

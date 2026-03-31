@@ -8,7 +8,7 @@ namespace Bobail.Application.Interfaces.Services
 {
     public interface IAuthService
     {
-        Task<Guid> RegisterAsync(string email, string password);
+        Task<Guid> RegisterAsync(string email, string password, string nickname);
         Task<string> LoginAsync(string email, string password);
     }
 }

@@ -16,15 +16,29 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var id = await _authService.RegisterAsync(request.Email, request.Password);
-        return Ok(id);
+        try
+        {
+            var id = await _authService.RegisterAsync(request.Email, request.Password, request.Nickname);
+            return Ok(id);
+        }
+        catch(Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("login")]
     [EnableRateLimiting("login")]
-    public async Task<IActionResult> Login(string email, string password)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var token = await _authService.LoginAsync(email, password);
-        return Ok(token);
+        try
+        {
+            var token = await _authService.LoginAsync(request.Email, request.Password);
+            return Ok(token);
+        }
+        catch(Exception e)
+        {
+            return BadRequest(e.Message);
+        }
     }
 }

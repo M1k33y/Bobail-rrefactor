@@ -2,39 +2,44 @@
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
 using Bobail.Domain.Users;
+using FluentValidation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Configuration;
-using System.ComponentModel.DataAnnotations;
 
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _config;
+    private readonly IValidator<(string Email, string Password, string Nickname)> _registerValidator;
+    private readonly IValidator<(string Email, string Password)> _loginValidator;
 
-    public AuthService(IUserRepository userRepository, IConfiguration config)
+    public AuthService(
+      IUserRepository userRepository,
+      IConfiguration config,
+      IValidator<(string Email, string Password, string Nickname)> registerValidator,
+      IValidator<(string Email, string Password)> loginValidator)
     {
         _userRepository = userRepository;
         _config = config;
+        _registerValidator = registerValidator;
+        _loginValidator = loginValidator;
     }
 
-    public async Task<Guid> RegisterAsync(string email, string password)
+    public async Task<Guid> RegisterAsync(string email, string password, string nickname)
     {
+
         var existing = await _userRepository.GetByEmailAsync(email);
         if (existing != null)
             throw new Exception("Email already exists");
 
-        var validator = new EmailAddressAttribute();
-        if (!validator.IsValid(email))
-            throw new Exception("Invalid email");
+        var result = _registerValidator.Validate((email, password, nickname));
 
-        if (string.IsNullOrWhiteSpace(email))
-            throw new Exception("Email required");
-
-        if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
-            throw new Exception("Password too short");
+        if (!result.IsValid)
+            throw new Exception(result.Errors.First().ErrorMessage);
 
         var user = new User
         {
@@ -42,7 +47,8 @@ public class AuthService : IAuthService
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
             Role = 0,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Nickname = nickname
         };
 
         await _userRepository.AddAsync(user);
@@ -52,6 +58,11 @@ public class AuthService : IAuthService
 
     public async Task<string> LoginAsync(string email, string password)
     {
+        var result = _loginValidator.Validate((email, password));
+
+        if (!result.IsValid)
+            throw new Exception(result.Errors.First().ErrorMessage);
+
         var user = await _userRepository.GetByEmailAsync(email);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))

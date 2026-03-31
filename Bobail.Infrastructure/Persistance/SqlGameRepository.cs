@@ -65,6 +65,21 @@ public class SqlGameRepository : IGameRepository
 
         entity.UpdatedAt = DateTime.UtcNow;
 
+        if (game.Status == GameStatus.Finished && game.Winner != null)
+        {
+            var winnerColor = (int)game.Winner;
+
+            var winnerPlayer = await _context.GamePlayers
+                .FirstOrDefaultAsync(x =>
+                    x.GameId == game.Id &&
+                    x.Color == winnerColor);
+
+            if (winnerPlayer != null)
+            {
+                entity.WinnerUserId = winnerPlayer.UserId;
+            }
+        }
+
 
         await _context.SaveChangesAsync(cancellationToken);
     }

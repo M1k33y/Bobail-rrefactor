@@ -157,7 +157,15 @@ public class GamesController : ControllerBase
         }));
     }
 
-    
+    [Authorize]
+    [HttpPost("{id}/abandon")]
+    public async Task<IActionResult> AbandonGame(Guid id)
+    {
+        await _gameService.AbandonGameAsync(id);
+        return NoContent();
+    }
+
+
     [HttpGet("test-auth")]
     public IActionResult TestAuth()
     {

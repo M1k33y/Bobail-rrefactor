@@ -4,5 +4,6 @@ public enum GameStatus
 {
     WaitingForPlayers,
     InProgress,
-    Finished
+    Finished,
+    Abandoned
 }

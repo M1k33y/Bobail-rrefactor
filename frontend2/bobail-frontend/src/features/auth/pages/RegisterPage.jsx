@@ -9,11 +9,17 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
+  const [nickname, setNickname] = useState("");
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     const newErrors = {};
+
+    if (!nickname) {
+      newErrors.nickname = "Nickname is required";
+    } else if (nickname.length < 3) {
+      newErrors.nickname = "Minimum 3 characters";
+    }
 
     if (!email) {
       newErrors.email = "Email is required";
@@ -45,7 +51,7 @@ export default function RegisterPage() {
     }
 
     try {
-      await register(email, password);
+      await register(email, password,nickname);
       navigate("/login");
     } catch {
       setErrors({ general: "Registration failed" });
@@ -59,6 +65,20 @@ export default function RegisterPage() {
         <p className="register-subtitle">
           Join and start playing
         </p>
+
+        <input
+          className={`register-input ${errors.nickname ? "error" : ""}`}
+          placeholder="Nickname"
+          value={nickname}
+          onChange={(e) => {
+            setNickname(e.target.value);
+            setErrors((prev) => ({ ...prev, nickname: null }));
+          }}
+        />
+        {errors.nickname && (
+          <span className="error-text">{errors.nickname}</span>
+        )}
+
 
         <input
           className={`register-input ${errors.email ? "error" : ""}`}
