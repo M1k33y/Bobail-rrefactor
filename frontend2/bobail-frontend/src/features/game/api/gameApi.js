@@ -1,18 +1,19 @@
 const API = "https://localhost:7006/api/games";
 
+import { authFetch } from "../../auth/api/authFetch";
 export const gameApi = {
     create: async () => {
-        const res = await fetch(API, { method: "POST" });
+        const res = await authFetch(API, { method: "POST" });
         return res.json();
     },
 
     get: async (gameId) => {
-        const res = await fetch(`${API}/${gameId}`);
+        const res = await authFetch(`${API}/${gameId}`);
         return res.json();
     },
 
     playerMove: async (gameId, payload) => {
-        const res = await fetch(`${API}/${gameId}/player-move`, {
+        const res = await authFetch(`${API}/${gameId}/player-move`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -27,21 +28,21 @@ export const gameApi = {
     },
 
     getValidPlayerMoves: async (gameId, row, col) => {
-        const res = await fetch(
+        const res = await authFetch(
             `${API}/${gameId}/valid-player-moves?row=${row}&col=${col}`
         );
         return res.json();
     },
 
     getValidBobailMoves: async (gameId) => {
-        const res = await fetch(
+        const res = await authFetch(
             `${API}/${gameId}/valid-bobail-moves`
         );
         return res.json();
     },
 
     bobailMove: async (gameId, payload) => {
-        const res = await fetch(`${API}/${gameId}/bobail-move`, {
+        const res = await authFetch(`${API}/${gameId}/bobail-move`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)

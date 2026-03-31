@@ -62,6 +62,11 @@ public class Game : Entity
         BotColor = botColor;
     }
 
+    public void Abandon()
+    {
+        Status = GameStatus.Abandoned;
+    }
+
     public bool IsBotTurn()
     {
         return Mode == GameMode.PlayerVsBot &&

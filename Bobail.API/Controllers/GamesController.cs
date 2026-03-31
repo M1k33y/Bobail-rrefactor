@@ -1,26 +1,43 @@
-﻿using Bobail.Application.DTOs;
+﻿using Bobail.API.Extensions;
+using Bobail.Application.DTOs;
+using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
 using Bobail.Domain.Games;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bobail.API.Controllers;
+
 
 [ApiController]
 [Route("api/[controller]")]
 public class GamesController : ControllerBase
 {
     private readonly IGameService _gameService;
+    private readonly IGamePlayerRepository _gamePlayerRepository;
 
-    public GamesController(IGameService gameService)
+
+    public GamesController(
+     IGameService gameService,
+     IGamePlayerRepository gamePlayerRepository)
     {
         _gameService = gameService;
+        _gamePlayerRepository = gamePlayerRepository;
     }
 
 
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult> CreateGame()
     {
+        var userId = User.GetUserId();
+
         var gameId = await _gameService.CreateGameAsync();
+
+        await _gamePlayerRepository.AddPlayersForGame(
+            gameId,
+            userId,
+            false);
 
         return Ok(new CreateGameResponse
         {
@@ -28,14 +45,22 @@ public class GamesController : ControllerBase
         });
     }
 
+    [Authorize]
     [HttpPost("vs-bot")]
     public async Task<ActionResult> CreateGameVsBot(
-        [FromBody] CreateBotGameRequest request)
+     [FromBody] CreateBotGameRequest request)
     {
+        var userId = User.GetUserId();
+
         var gameId = await _gameService.CreateGameAsync(
-        GameMode.PlayerVsBot,
-        request.Difficulty,
-        request.BotColor);
+            GameMode.PlayerVsBot,
+            request.Difficulty,
+            request.BotColor);
+
+        await _gamePlayerRepository.AddPlayersForGame(
+            gameId,
+            userId,
+            true);
 
         return Ok(new CreateGameResponse
         {
@@ -72,7 +97,7 @@ public class GamesController : ControllerBase
         return Ok(response);
     }
 
-
+    [Authorize]
     [HttpPost("{id:guid}/player-move")]
     public async Task<ActionResult> ExecutePlayerMove(
         Guid id,
@@ -88,7 +113,7 @@ public class GamesController : ControllerBase
         return NoContent();
     }
 
-
+    [Authorize]
     [HttpPost("{id:guid}/bobail-move")]
     public async Task<ActionResult> ExecuteBobailMove(
         Guid id,
@@ -130,5 +155,20 @@ public class GamesController : ControllerBase
             row = m.Row,
             column = m.Column
         }));
+    }
+
+    [Authorize]
+    [HttpPost("{id}/abandon")]
+    public async Task<IActionResult> AbandonGame(Guid id)
+    {
+        await _gameService.AbandonGameAsync(id);
+        return NoContent();
+    }
+
+
+    [HttpGet("test-auth")]
+    public IActionResult TestAuth()
+    {
+        return Ok("Authorized");
     }
 }

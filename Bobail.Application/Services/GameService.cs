@@ -27,6 +27,8 @@ public class GameService : IGameService
         _scopeFactory = scopeFactory;
     }
 
+
+
     public async Task<Guid> CreateGameAsync(
         GameMode mode,
         BotDifficulty? difficulty,
@@ -148,7 +150,16 @@ public class GameService : IGameService
         });
     }
 
-   public async Task ExecuteBotCycleAsync(
+    public async Task AbandonGameAsync(Guid gameId)
+    {
+        var game = await _repository.GetByIdAsync(gameId);
+
+        game.Abandon();
+
+        await _repository.UpdateAsync(game);
+    }
+
+    public async Task ExecuteBotCycleAsync(
         Guid gameId,
         CancellationToken cancellationToken)
     {

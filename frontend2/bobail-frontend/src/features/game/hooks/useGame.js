@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { gameApi } from "../api/gameApi";
+import { authFetch } from "../../auth/api/authFetch";
 
 export function useGame(gameId) {
   const [game, setGame] = useState(null);

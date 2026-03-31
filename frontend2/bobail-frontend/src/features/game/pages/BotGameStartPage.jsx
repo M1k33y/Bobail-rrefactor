@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/BotGameStartPage.css";
+import { authFetch } from "../../auth/api/authFetch";
+import { useAuth } from "../../auth/hooks/useAuth";
+
 function BotGameStartPage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const [difficulty, setDifficulty] = useState("Easy");
   const [playerColor, setPlayerColor] = useState("Red");
@@ -11,10 +15,15 @@ function BotGameStartPage() {
   const botColor = playerColor === "Red" ? "Green" : "Red";
 
   async function handleStart() {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const res = await fetch(
+      const res = await authFetch(
         "https://localhost:7006/api/games/vs-bot",
         {
           method: "POST",
@@ -25,6 +34,10 @@ function BotGameStartPage() {
           })
         }
       );
+
+      if (!res.ok) {
+        throw new Error("Failed to start game");
+      }
 
       const data = await res.json();
       navigate(`/play/${data.gameId}`);

@@ -7,18 +7,51 @@ import GamePage from "../features/game/pages/GamePage";
 import LocalGameStartPage from "../features/game/pages/LocalGameStartPage";
 import BotGameStartPage from "../features/game/pages/BotGameStartPage";
 import NotFound from "./pages/NotFound";
+import LoginPage from "../features/auth/pages/LoginPage";
+import RegisterPage from "../features/auth/pages/RegisterPage";
+import ProtectedRoute from "../routes/ProtectedRoute.jsx";
 export const router = createBrowserRouter([
   {
   element: <MainLayout />,
   children: [
     { path: "/", element: <HomePage /> },
     { path: "/rules", element: <RulesPage /> },
-    { path: "/play/local", element: <LocalGameStartPage /> },
-    { path: "/play/bot", element: <BotGameStartPage />},
-    { path: "/play/local/:gameId", element: <GamePage /> },
-    { path: "/play/:gameId", element: <GamePage /> },
+    {
+        path: "/play/local",
+        element: (
+          <ProtectedRoute>
+            <LocalGameStartPage />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "/play/bot",
+        element: (
+          <ProtectedRoute>
+            <BotGameStartPage />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "/play/local/:gameId",
+        element: (
+          <ProtectedRoute>
+            <GamePage />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "/play/:gameId",
+        element: (
+          <ProtectedRoute>
+            <GamePage />
+          </ProtectedRoute>
+        )
+      },
     { path: "/play/online", element: <div>Online Coming Soon</div> },
     { path: "/settings", element: <SettingsPage /> },
+    { path: "/login", element: <LoginPage /> },
+    { path: "/register", element: <RegisterPage /> },
     { path: "*", element: <NotFound /> }
   ]
 }

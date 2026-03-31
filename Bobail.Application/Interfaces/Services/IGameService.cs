@@ -38,4 +38,6 @@ public interface IGameService
     Task ExecuteBotCycleAsync(  
     Guid gameId,
     CancellationToken cancellationToken);
+
+    Task AbandonGameAsync(Guid gameId);
 }

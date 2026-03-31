@@ -18,7 +18,15 @@ public class SqlGameRepository : IGameRepository
         var entity = new GameEntity
         {
             Id = game.Id,
-            StateJson = GameSerializer.Serialize(game)
+            StateJson = GameSerializer.Serialize(game),
+
+            Status = (int)game.Status,
+            CurrentTurn = (int)game.CurrentTurn,
+            Mode = (int)game.Mode,
+            BotDifficulty = game.BotDifficulty.HasValue ? (int)game.BotDifficulty.Value : null,
+
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         _context.Games.Add(entity);
@@ -27,7 +35,6 @@ public class SqlGameRepository : IGameRepository
 
     public async Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        Console.WriteLine($"[SQL] GetById: {id}");
 
         var entity = await _context.Games
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -36,9 +43,6 @@ public class SqlGameRepository : IGameRepository
             return null;
 
         var game = GameSerializer.Deserialize(entity.StateJson);
-
-        var piece = game.Board.Pieces
-            .FirstOrDefault(p => p.Position.Row == 3 && p.Position.Column == 0);
 
         return game;
     }
@@ -53,6 +57,29 @@ public class SqlGameRepository : IGameRepository
             throw new InvalidOperationException("Game not found.");
 
         entity.StateJson = GameSerializer.Serialize(game);
+
+        entity.Status = (int)game.Status;
+        entity.CurrentTurn = (int)game.CurrentTurn;
+        entity.Mode = (int)game.Mode;
+        entity.BotDifficulty = game.BotDifficulty.HasValue ? (int)game.BotDifficulty.Value : null;
+
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        if (game.Status == GameStatus.Finished && game.Winner != null)
+        {
+            var winnerColor = (int)game.Winner;
+
+            var winnerPlayer = await _context.GamePlayers
+                .FirstOrDefaultAsync(x =>
+                    x.GameId == game.Id &&
+                    x.Color == winnerColor);
+
+            if (winnerPlayer != null)
+            {
+                entity.WinnerUserId = winnerPlayer.UserId;
+            }
+        }
+
 
         await _context.SaveChangesAsync(cancellationToken);
     }
