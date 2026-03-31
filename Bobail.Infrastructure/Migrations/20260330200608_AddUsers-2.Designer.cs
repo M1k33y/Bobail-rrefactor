@@ -4,6 +4,7 @@ using Bobail.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bobail.Infrastructure.Migrations
 {
     [DbContext(typeof(GameDbContext))]
-    partial class GameDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260330200608_AddUsers-2")]
+    partial class AddUsers2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -84,42 +87,6 @@ namespace Bobail.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("GamePlayerEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Color")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("GameId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsBot")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GameId");
-
-                    b.ToTable("GamePlayers");
-                });
-
-            modelBuilder.Entity("GamePlayerEntity", b =>
-                {
-                    b.HasOne("Bobail.Infrastructure.Persistence.GameEntity", "Game")
-                        .WithMany()
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Game");
                 });
 #pragma warning restore 612, 618
         }

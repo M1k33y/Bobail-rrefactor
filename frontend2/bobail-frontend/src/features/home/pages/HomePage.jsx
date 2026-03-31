@@ -1,11 +1,27 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/hooks/useAuth";
 import "../styles/HomePage.css";
 
 function HomePage() {
   const navigate = useNavigate();
+  const { logout, isAuthenticated } = useAuth();
 
   return (
     <div className="home-container">
+
+      {/* LOGOUT/LOGIN BUTTON */}
+      {isAuthenticated ? (
+        <button className="logout-btn" onClick={logout}>
+          Logout
+        </button>
+      ) : (
+        <button
+          className="logout-btn"
+          onClick={() => navigate("/login")}
+        >
+          Login
+        </button>
+      )}
 
       <div className="hero">
         <h1>Bobail</h1>

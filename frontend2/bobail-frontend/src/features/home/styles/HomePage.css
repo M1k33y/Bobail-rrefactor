@@ -95,3 +95,32 @@ button:hover {
 button:active {
   transform: scale(0.96);
 }
+
+.logout-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+
+  background: rgba(255,255,255,0.05);
+  color: white;
+  font-weight: 500;
+
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(59,130,246,0.4);
+  box-shadow: 0 8px 20px rgba(59,130,246,0.2);
+}
+
+.logout-btn:active {
+  transform: scale(0.95);
+}
