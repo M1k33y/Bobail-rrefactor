@@ -22,7 +22,7 @@
   z-index: 0;
 }
 
-/* Card */
+
 .login-card {
   position: relative;
   z-index: 1;
@@ -44,7 +44,7 @@
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
 
-/* Title */
+
 .login-card h2 {
   text-align: center;
   font-size: 28px;
@@ -54,7 +54,7 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Subtitle */
+
 .login-subtitle {
   text-align: center;
   font-size: 14px;
@@ -62,7 +62,7 @@
   margin-bottom: 10px;
 }
 
-/* Inputs */
+
 .login-input {
   padding: 12px 14px;
   border-radius: 10px;
@@ -82,7 +82,7 @@
   box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
 }
 
-/* Button */
+
 .login-button {
   margin-top: 10px;
   padding: 12px;
@@ -107,7 +107,7 @@
   transform: scale(0.96);
 }
 
-/* Footer */
+
 .login-footer {
   margin-top: 10px;
   text-align: center;
@@ -137,4 +137,92 @@
   font-size: 12px;
   margin-top: -8px;
   margin-bottom: 5px;
+}
+
+.success-text {
+  color: #4caf50;
+  font-size: 14px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper .login-input {
+  width: 100%;
+  padding-right: 40px; 
+  box-sizing: border-box;
+}
+
+.eye-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  outline: none;        
+  box-shadow: none; 
+}
+
+.eye-button:focus,
+.eye-button:active {
+  background: transparent !important;
+  outline: none;
+  box-shadow: none;
+}
+
+.eye-button:hover {
+  color: #fff;
+  background: transparent;
+  transform: translateY(-50%); 
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-wrapper .login-input {
+  width: 100%;
+  padding-left: 40px;  /* spațiu pentru icon stânga */
+  padding-right: 40px; /* spațiu pentru eye */
+  box-sizing: border-box;
+}
+
+/* icon stânga */
+.input-icon.left {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  pointer-events: none;
+}
+
+/* eye dreapta */
+.eye-button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.eye-button:hover {
+  color: #fff;
 }

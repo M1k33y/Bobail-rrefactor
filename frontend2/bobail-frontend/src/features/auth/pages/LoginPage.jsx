@@ -1,30 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/LoginPage.css";
-import { useLocation } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const { loginUser } = useAuth();
   const navigate = useNavigate();
-    const location = useLocation();
+  const location = useLocation();
+  const [showPassword, setShowPassword] = useState(false);
+  const successMessage = location.state?.success;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+
+  useEffect(() => {
+    if (location.state?.success) {
+      window.history.replaceState({}, document.title);
+    }
+  }, []);
 
   const validate = () => {
     const newErrors = {};
 
-    if (!email) {
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail) {
       newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
       newErrors.email = "Invalid email format";
     }
 
-    if (!password) {
+    if (!trimmedPassword) {
       newErrors.password = "Password is required";
-    } else if (password.length < 6) {
+    } else if (trimmedPassword.length < 6) {
       newErrors.password = "Minimum 6 characters";
     }
 
@@ -32,6 +45,8 @@ export default function LoginPage() {
   };
 
   const handleLogin = async () => {
+    if (loading) return;
+
     const validationErrors = validate();
 
     if (Object.keys(validationErrors).length > 0) {
@@ -40,10 +55,22 @@ export default function LoginPage() {
     }
 
     try {
-      await loginUser(email, password);
+      setLoading(true);
+      setErrors({});
+
+      await loginUser(email.trim(), password.trim());
+
       navigate(location.state?.from || "/");
     } catch {
       setErrors({ general: "Invalid email or password" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleLogin();
     }
   };
 
@@ -53,35 +80,74 @@ export default function LoginPage() {
         <h2>Welcome Back</h2>
         <p className="login-subtitle">Log in to continue playing</p>
 
-        <input
-          className={`login-input ${errors.email ? "error" : ""}`}
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        {/*SUCCESS MESSAGE */}
+        {successMessage && (
+          <span className="success-text">{successMessage}</span>
+        )}
+
+        {/* EMAIL */}
+        <div className="input-wrapper">
+          <Mail className="input-icon left" size={18} />
+
+          <input
+            className={`login-input ${errors.email ? "error" : ""}`}
+            placeholder="Email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setErrors((prev) => ({ ...prev, email: null, general: null }));
+            }}
+            onKeyDown={handleKeyDown}
+            autoComplete="email"
+          />
+        </div>
         {errors.email && <span className="error-text">{errors.email}</span>}
 
-        <input
-          className={`login-input ${errors.password ? "error" : ""}`}
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {/* PASSWORD */}
+        <div className="input-wrapper">
+          <Lock className="input-icon left" size={18} />
+
+          <input
+            className={`login-input ${errors.password ? "error" : ""}`}
+            placeholder="Password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setErrors((prev) => ({ ...prev, password: null, general: null }));
+            }}
+            onKeyDown={handleKeyDown}
+            autoComplete="current-password"
+          />
+
+          <button
+            type="button"
+            className="eye-button"
+            onClick={() => setShowPassword((prev) => !prev)}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
         {errors.password && (
           <span className="error-text">{errors.password}</span>
         )}
 
+        {/* GENERAL ERROR */}
         {errors.general && (
           <span className="error-text">{errors.general}</span>
         )}
 
-        <button className="login-button" onClick={handleLogin}>
-          Login
+        {/* BUTTON */}
+        <button
+          className="login-button"
+          onClick={handleLogin}
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Login"}
         </button>
 
         <p className="login-footer">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <span onClick={() => navigate("/register")}>
             Register
           </span>

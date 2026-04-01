@@ -31,7 +31,7 @@ public class AuthService : IAuthService
 
     public async Task<Guid> RegisterAsync(string email, string password, string nickname)
     {
-
+        email = email.Trim().ToLower();
         var existing = await _userRepository.GetByEmailAsync(email);
         if (existing != null)
             throw new Exception("Email already exists");
@@ -58,6 +58,7 @@ public class AuthService : IAuthService
 
     public async Task<string> LoginAsync(string email, string password)
     {
+        email = email.Trim().ToLower();
         var result = _loginValidator.Validate((email, password));
 
         if (!result.IsValid)
