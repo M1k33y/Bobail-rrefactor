@@ -9,7 +9,7 @@ namespace Bobail.Application.Tests.Validators
         [Fact]
         public void Should_Fail_When_Email_Invalid()
         {
-            var result = _validator.TestValidate((Email:"invalid",Password:"123456"));
+            var result = _validator.TestValidate((Email:"invalid",Password:"StrongPass1"));
 
             result.ShouldHaveValidationErrorFor(x => x.Email);
         }
@@ -25,7 +25,7 @@ namespace Bobail.Application.Tests.Validators
         [Fact]
         public void Should_Pass_When_Valid()
         {
-            var result = _validator.TestValidate(("test@mail.com", "123456"));
+            var result = _validator.TestValidate(("test@mail.com", "StrongPass1"));
 
             result.ShouldNotHaveAnyValidationErrors();
         }

@@ -4,6 +4,8 @@ using Bobail.Application.Interfaces.Services;
 using Bobail.Application.Services;
 using Bobail.Application.Services.Bot;
 using Bobail.Infrastructure.Bots;
+using Bobail.Infrastructure.Email;
+using Bobail.Infrastructure.Persistance.Repositories;
 using Bobail.Infrastructure.Persistence;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -52,8 +54,22 @@ builder.Services.AddDbContext<GameDbContext>(options =>
 
 builder.Services.AddScoped<IGameRepository, SqlGameRepository>();
 builder.Services.AddScoped<IUserRepository, SqlUserRepository>();
+builder.Services.AddScoped<IEmailVerificationTokenRepository, SqlEmailVerificationTokenRepository>();
+builder.Services.AddScoped<IPasswordResetTokenRepository, SqlPasswordResetTokenRepository>();
 builder.Services.AddScoped<IGamePlayerRepository, SqlGamePlayerRepository>();
 
+builder.Services.AddSingleton<InMemoryEmailSender>();
+builder.Services.AddSingleton<IEmailOutbox>(sp => sp.GetRequiredService<InMemoryEmailSender>());
+builder.Services.AddSingleton<SmtpEmailSender>();
+builder.Services.AddSingleton<IEmailSender>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var smtpHost = configuration["Email:Smtp:Host"];
+
+    return string.IsNullOrWhiteSpace(smtpHost)
+        ? sp.GetRequiredService<InMemoryEmailSender>()
+        : sp.GetRequiredService<SmtpEmailSender>();
+});
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGameService, GameService>();

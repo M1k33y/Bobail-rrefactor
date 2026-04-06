@@ -1,4 +1,4 @@
-﻿namespace Bobail.Infrastructure.Persistence;
+﻿namespace Bobail.Infrastructure.Persistance.Entities;
 
 public class GameEntity
 {

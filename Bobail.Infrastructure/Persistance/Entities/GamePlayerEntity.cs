@@ -1,4 +1,4 @@
-﻿using Bobail.Infrastructure.Persistence;
+﻿using Bobail.Infrastructure.Persistance.Entities;
 
 public class GamePlayerEntity
 {

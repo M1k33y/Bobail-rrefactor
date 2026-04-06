@@ -1,0 +1,64 @@
+.bot-config-card {
+  text-align: center;
+}
+
+.settings-section.centered {
+  margin-top: 1.8rem;
+}
+
+.settings-section.centered h3 {
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+}
+
+.option-group {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  min-width: 90px;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.btn.active {
+  outline: 2px solid #ffffff;
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(255,255,255,0.4);
+}
+
+/* Difficulty */
+.difficulty-easy {
+  background: #1e7e34;
+  color: white;
+}
+
+.difficulty-medium {
+  background: #d97706;
+  color: white;
+}
+
+.difficulty-hard {
+  background: #b91c1c;
+  color: white;
+}
+
+/* Colors */
+.color-red {
+  background: #b91c1c;
+  color: white;
+}
+
+.color-green {
+  background: #15803d;
+  color: white;
+}
+
+/* Start button spacing */
+.start-button-wrapper {
+  margin-top: 2.5rem;
+}

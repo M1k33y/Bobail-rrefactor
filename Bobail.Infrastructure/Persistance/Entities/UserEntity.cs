@@ -1,4 +1,4 @@
-﻿namespace Bobail.Infrastructure.Persistence;
+﻿namespace Bobail.Infrastructure.Persistance.Entities;
 
 public class UserEntity
 {
@@ -12,4 +12,8 @@ public class UserEntity
     public int Role { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public bool IsEmailVerified { get; set; }
+
+    public DateTime? EmailVerifiedAtUtc { get; set; }
 }

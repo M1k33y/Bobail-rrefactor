@@ -1,18 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { login } from "../api/authApi";
+import {
+  clearStoredToken,
+  getStoredToken,
+  storeToken,
+} from "../utils/authStorage";
 
 export const useAuth = () => {
-  const [isAuth, setIsAuth] = useState(!!localStorage.getItem("token"));
+  const [isAuth, setIsAuth] = useState(!!getStoredToken());
 
-  const loginUser = async (email, password) => {
-    const token = await login(email, password);
-    localStorage.setItem("token", token);
-    setIsAuth(true); 
+  const loginUser = async (email, password, rememberMe) => {
+    const response = await login(email, password, rememberMe);
+    storeToken(response.token, rememberMe);
+    setIsAuth(true);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    setIsAuth(false); 
+    clearStoredToken();
+    setIsAuth(false);
   };
 
   return { loginUser, logout, isAuthenticated: isAuth };

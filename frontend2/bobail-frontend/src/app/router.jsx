@@ -9,20 +9,24 @@ import BotGameStartPage from "../features/game/pages/BotGameStartPage";
 import NotFound from "./pages/NotFound";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
+import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
+import VerifyEmailPage from "../features/auth/pages/VerifyEmailPage";
 import ProtectedRoute from "../routes/ProtectedRoute.jsx";
+
 export const router = createBrowserRouter([
   {
-  element: <MainLayout />,
-  children: [
-    { path: "/", element: <HomePage /> },
-    { path: "/rules", element: <RulesPage /> },
-    {
+    element: <MainLayout />,
+    children: [
+      { path: "/", element: <HomePage /> },
+      { path: "/rules", element: <RulesPage /> },
+      {
         path: "/play/local",
         element: (
           <ProtectedRoute>
             <LocalGameStartPage />
           </ProtectedRoute>
-        )
+        ),
       },
       {
         path: "/play/bot",
@@ -30,7 +34,7 @@ export const router = createBrowserRouter([
           <ProtectedRoute>
             <BotGameStartPage />
           </ProtectedRoute>
-        )
+        ),
       },
       {
         path: "/play/local/:gameId",
@@ -38,7 +42,7 @@ export const router = createBrowserRouter([
           <ProtectedRoute>
             <GamePage />
           </ProtectedRoute>
-        )
+        ),
       },
       {
         path: "/play/:gameId",
@@ -46,13 +50,16 @@ export const router = createBrowserRouter([
           <ProtectedRoute>
             <GamePage />
           </ProtectedRoute>
-        )
+        ),
       },
-    { path: "/play/online", element: <div>Online Coming Soon</div> },
-    { path: "/settings", element: <SettingsPage /> },
-    { path: "/login", element: <LoginPage /> },
-    { path: "/register", element: <RegisterPage /> },
-    { path: "*", element: <NotFound /> }
-  ]
-}
+      { path: "/play/online", element: <div>Online Coming Soon</div> },
+      { path: "/settings", element: <SettingsPage /> },
+      { path: "/login", element: <LoginPage /> },
+      { path: "/register", element: <RegisterPage /> },
+      { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
+      { path: "/verify-email", element: <VerifyEmailPage /> },
+      { path: "*", element: <NotFound /> },
+    ],
+  },
 ]);

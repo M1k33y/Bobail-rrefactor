@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Bobail.Infrastructure.Persistance.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Bobail.Infrastructure.Persistence;
 
@@ -9,6 +10,10 @@ public class GameDbContext : DbContext
     public DbSet<UserEntity> Users => Set<UserEntity>();
 
     public DbSet<GamePlayerEntity> GamePlayers => Set<GamePlayerEntity>();
+
+    public DbSet<EmailVerificationTokenEntity> EmailVerificationTokens => Set<EmailVerificationTokenEntity>();
+
+    public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
 
     public GameDbContext(DbContextOptions<GameDbContext> options)
         : base(options)
@@ -33,18 +38,50 @@ public class GameDbContext : DbContext
         });
 
         modelBuilder.Entity<UserEntity>(entity =>
-{
-    entity.HasKey(x => x.Id);
+        {
+            entity.HasKey(x => x.Id);
 
-    entity.Property(x => x.Email).IsRequired();
-    entity.HasIndex(x => x.Email).IsUnique();
+            entity.Property(x => x.Email).IsRequired();
+            entity.HasIndex(x => x.Email).IsUnique();
 
-    entity.Property(x => x.PasswordHash).IsRequired();
+            entity.Property(x => x.PasswordHash).IsRequired();
 
-    entity.Property(x => x.Role);
+            entity.Property(x => x.Role);
+            entity.Property(x => x.CreatedAt);
+            entity.Property(x => x.Nickname).IsRequired();
+            entity.Property(x => x.IsEmailVerified).HasDefaultValue(false);
+            entity.Property(x => x.EmailVerifiedAtUtc);
+        });
 
-    entity.Property(x => x.CreatedAt);
-});
+        modelBuilder.Entity<EmailVerificationTokenEntity>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TokenHash).IsRequired();
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.Property(x => x.ExpiresAtUtc).IsRequired();
+            entity.Property(x => x.CreatedAtUtc).IsRequired();
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PasswordResetTokenEntity>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TokenHash).IsRequired();
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.Property(x => x.ExpiresAtUtc).IsRequired();
+            entity.Property(x => x.CreatedAtUtc).IsRequired();
+            entity.Property(x => x.Used).HasDefaultValue(false);
+            entity.Property(x => x.UsedAtUtc);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<GamePlayerEntity>(entity =>
         {

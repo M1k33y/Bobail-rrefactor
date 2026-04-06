@@ -48,9 +48,9 @@ const pieceStyles = {
     bobail: "linear-gradient(145deg, #f5d142, #c9a000)"
   },
   flat: {
-    red: "#ff4d4d",
-    green: "#3ddc84",
-    bobail: "#f5d142"
+    red: "#c10707",
+    green: "#007033",
+    bobail: "#a98804"
   },
   neon: {
     red: "#ff0055",

@@ -10,6 +10,8 @@ namespace Bobail.Application.Interfaces.Repositories
     public interface IUserRepository
     {
         Task AddAsync(User user);
+        Task<User?> GetByIdAsync(Guid userId);
         Task<User?> GetByEmailAsync(string email);
+        Task UpdateAsync(User user);
     }
 }

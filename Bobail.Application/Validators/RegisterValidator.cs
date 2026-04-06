@@ -9,8 +9,9 @@ public class RegisterValidator : AbstractValidator<(string Email, string Passwor
             .EmailAddress().WithMessage("Invalid email");
 
         RuleFor(x => x.Password)
-            .NotEmpty()
-            .MinimumLength(6).WithMessage("Password too short");
+            .NotEmpty().WithMessage("Password required")
+            .Must(PasswordPolicy.IsValid)
+            .WithMessage(PasswordPolicy.PasswordRequirementsMessage);
 
         RuleFor(x => x.Nickname)
             .NotEmpty()
