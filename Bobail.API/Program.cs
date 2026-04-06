@@ -53,6 +53,8 @@ builder.Services.AddDbContext<GameDbContext>(options =>
 
 
 builder.Services.AddScoped<IGameRepository, SqlGameRepository>();
+builder.Services.AddScoped<IGameStateRepository, SqlGameStateRepository>();
+builder.Services.AddScoped<IGameHistoryRepository, SqlGameHistoryRepository>();
 builder.Services.AddScoped<IUserRepository, SqlUserRepository>();
 builder.Services.AddScoped<IEmailVerificationTokenRepository, SqlEmailVerificationTokenRepository>();
 builder.Services.AddScoped<IPasswordResetTokenRepository, SqlPasswordResetTokenRepository>();

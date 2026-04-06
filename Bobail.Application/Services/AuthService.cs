@@ -225,7 +225,8 @@ public class AuthService : IAuthService
         {
             Token = new JwtSecurityTokenHandler().WriteToken(token),
             ExpiresAtUtc = expiresAtUtc,
-            RememberMe = rememberMe
+            RememberMe = rememberMe,
+            Nickname = user.Nickname
         };
     }
 

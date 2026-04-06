@@ -26,9 +26,9 @@
 }
 
 .selected {
-  outline: 3px solid rgba(255,255,255,0.7);
+  outline: 3px solid var(--selectedOutline);
 }
 
 .valid-move {
-  box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.6);
+  box-shadow: 0 0 0 3px var(--validMoveGlow);
 }

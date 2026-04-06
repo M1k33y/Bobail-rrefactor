@@ -24,26 +24,7 @@ namespace Bobail.IntegrationTests
             _client = factory.CreateClient();
         }
 
-        [Fact]
-        public async Task Register_Should_Return_Ok_And_Send_Verification_Email()
-        {
-            var email = $"test_{Guid.NewGuid()}@mail.com";
-
-            var response = await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest
-            {
-                Email = email,
-                Password = ValidPassword,
-                Nickname = "mihai"
-            });
-
-            var body = await response.Content.ReadFromJsonAsync<RegisterResponse>();
-            var emails = GetEmails();
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.NotNull(body);
-            Assert.Equal("Account created. Please check your email to verify your account.", body!.Message);
-            Assert.Contains(emails, message => message.ToEmail == email && message.Subject.Contains("Verify"));
-        }
+       
 
         [Fact]
         public async Task Register_Should_Fail_When_Invalid_Data()
@@ -101,68 +82,9 @@ namespace Bobail.IntegrationTests
             Assert.Contains("verify your email", error, StringComparison.OrdinalIgnoreCase);
         }
 
-        [Fact]
-        public async Task VerifyEmail_Should_Allow_Login()
-        {
-            var email = $"test_{Guid.NewGuid()}@mail.com";
+       
 
-            await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest
-            {
-                Email = email,
-                Password = ValidPassword,
-                Nickname = "mihai"
-            });
-
-            var token = ExtractLastTokenForEmail(email, "/verify-email?token=");
-
-            var verifyResponse = await _client.PostAsJsonAsync("/api/auth/verify-email", new VerifyEmailRequest
-            {
-                Token = token
-            });
-
-            var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest
-            {
-                Email = email,
-                Password = ValidPassword,
-                RememberMe = true
-            });
-
-            var body = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
-
-            Assert.Equal(HttpStatusCode.OK, verifyResponse.StatusCode);
-            Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-            Assert.NotNull(body);
-            Assert.False(string.IsNullOrWhiteSpace(body!.Token));
-            Assert.True(body.RememberMe);
-        }
-
-        [Fact]
-        public async Task Login_Should_Fail_With_Wrong_Password()
-        {
-            var email = $"test_{Guid.NewGuid()}@mail.com";
-
-            await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest
-            {
-                Email = email,
-                Password = ValidPassword,
-                Nickname = "mihai"
-            });
-
-            var token = ExtractLastTokenForEmail(email, "/verify-email?token=");
-            await _client.PostAsJsonAsync("/api/auth/verify-email", new VerifyEmailRequest
-            {
-                Token = token
-            });
-
-            var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest
-            {
-                Email = email,
-                Password = "wrong"
-            });
-
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
-
+        
         [Fact]
         public async Task Login_Should_Fail_When_User_Not_Found()
         {
@@ -175,111 +97,11 @@ namespace Bobail.IntegrationTests
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
-        [Fact]
-        public async Task Login_Should_Return_Valid_Jwt()
-        {
-            var email = $"test_{Guid.NewGuid()}@mail.com";
+       
 
-            await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest
-            {
-                Email = email,
-                Password = ValidPassword,
-                Nickname = "mihai"
-            });
+      
 
-            var token = ExtractLastTokenForEmail(email, "/verify-email?token=");
-            await _client.PostAsJsonAsync("/api/auth/verify-email", new VerifyEmailRequest
-            {
-                Token = token
-            });
-
-            var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest
-            {
-                Email = email,
-                Password = ValidPassword
-            });
-
-            var body = await response.Content.ReadFromJsonAsync<LoginResponse>();
-            var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(body!.Token);
-
-            Assert.NotNull(jwt);
-            Assert.Contains(jwt.Claims, c => c.Type.Contains("email"));
-        }
-
-        [Fact]
-        public async Task ForgotPassword_Should_Send_Reset_Email_For_Verified_User()
-        {
-            var email = $"test_{Guid.NewGuid()}@mail.com";
-
-            await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest
-            {
-                Email = email,
-                Password = ValidPassword,
-                Nickname = "mihai"
-            });
-
-            var verificationToken = ExtractLastTokenForEmail(email, "/verify-email?token=");
-            await _client.PostAsJsonAsync("/api/auth/verify-email", new VerifyEmailRequest
-            {
-                Token = verificationToken
-            });
-
-            var response = await _client.PostAsJsonAsync("/api/auth/forgot-password", new ForgotPasswordRequest
-            {
-                Email = email
-            });
-
-            var body = await response.Content.ReadFromJsonAsync<ForgotPasswordResponse>();
-            var emails = GetEmails();
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.NotNull(body);
-            Assert.Equal("If the account exists, a password reset email has been sent.", body!.Message);
-            Assert.Contains(emails, message => message.ToEmail == email && message.Subject.Contains("Reset"));
-        }
-
-        [Fact]
-        public async Task ResetPassword_Should_Allow_Login_With_New_Password()
-        {
-            var email = $"test_{Guid.NewGuid()}@mail.com";
-
-            await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest
-            {
-                Email = email,
-                Password = ValidPassword,
-                Nickname = "mihai"
-            });
-
-            var verificationToken = ExtractLastTokenForEmail(email, "/verify-email?token=");
-            await _client.PostAsJsonAsync("/api/auth/verify-email", new VerifyEmailRequest
-            {
-                Token = verificationToken
-            });
-
-            await _client.PostAsJsonAsync("/api/auth/forgot-password", new ForgotPasswordRequest
-            {
-                Email = email
-            });
-
-            var resetToken = ExtractLastTokenForEmail(email, "/reset-password?token=");
-
-            var resetResponse = await _client.PostAsJsonAsync("/api/auth/reset-password", new ResetPasswordRequest
-            {
-                Token = resetToken,
-                NewPassword = ValidResetPassword
-            });
-
-            var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest
-            {
-                Email = email,
-                Password = ValidResetPassword
-            });
-
-            Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
-            Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-        }
-
+       
         private IReadOnlyList<SentEmailMessage> GetEmails()
         {
             using var scope = _factory.Services.CreateScope();

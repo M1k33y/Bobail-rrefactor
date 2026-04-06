@@ -1,4 +1,4 @@
-﻿using Bobail.Infrastructure.Persistance.Entities;
+using Bobail.Infrastructure.Persistance.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bobail.Infrastructure.Persistence;
@@ -10,6 +10,8 @@ public class GameDbContext : DbContext
     public DbSet<UserEntity> Users => Set<UserEntity>();
 
     public DbSet<GamePlayerEntity> GamePlayers => Set<GamePlayerEntity>();
+
+    public DbSet<GameStateEntity> GameStates => Set<GameStateEntity>();
 
     public DbSet<EmailVerificationTokenEntity> EmailVerificationTokens => Set<EmailVerificationTokenEntity>();
 
@@ -34,7 +36,6 @@ public class GameDbContext : DbContext
 
             entity.Property(x => x.CreatedAt);
             entity.Property(x => x.UpdatedAt);
-
         });
 
         modelBuilder.Entity<UserEntity>(entity =>
@@ -93,6 +94,23 @@ public class GameDbContext : DbContext
 
             entity.Property(x => x.Color);
             entity.Property(x => x.IsBot);
+        });
+
+        modelBuilder.Entity<GameStateEntity>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.HasOne(x => x.Game)
+                .WithMany()
+                .HasForeignKey(x => x.GameId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(x => x.MoveNumber);
+            entity.Property(x => x.StateJson).IsRequired();
+            entity.Property(x => x.CreatedAt);
+
+            entity.HasIndex(x => new { x.GameId, x.MoveNumber })
+                .IsUnique();
         });
     }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { verifyEmail } from "../api/authApi";
 import "../styles/LoginPage.css";
@@ -8,18 +8,25 @@ export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("Verifying your email...");
+  const lastProcessedTokenRef = useRef(null);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = (params.get("token") || "").trim();
+
+    if (!token) {
+      setStatus("error");
+      setMessage("Verification token is missing.");
+      return;
+    }
+
+    if (lastProcessedTokenRef.current === token) {
+      return;
+    }
+
+    lastProcessedTokenRef.current = token;
+
     const runVerification = async () => {
-      const params = new URLSearchParams(location.search);
-      const token = params.get("token") || "";
-
-      if (!token.trim()) {
-        setStatus("error");
-        setMessage("Verification token is missing.");
-        return;
-      }
-
       try {
         const response = await verifyEmail(token);
         setStatus("success");

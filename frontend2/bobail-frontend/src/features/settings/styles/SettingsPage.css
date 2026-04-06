@@ -1,3 +1,26 @@
+.settings-page {
+  max-width: 1100px;
+}
+
+.settings-header {
+  margin-bottom: 28px;
+}
+
+.settings-eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.settings-subtitle {
+  max-width: 640px;
+  color: var(--mutedText);
+  line-height: 1.6;
+}
+
 .theme-grid {
   display: flex;
   gap: 20px;
@@ -6,10 +29,15 @@
 }
 
 .theme-card {
-  width: 120px;
+  width: 170px;
   cursor: pointer;
-  text-align: center;
+  text-align: left;
   transition: all 0.2s ease;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--surfaceSoft);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 28px var(--shadow);
 }
 
 .theme-card:hover {
@@ -17,14 +45,14 @@
 }
 
 .theme-card.active {
-  outline: 2px solid #3b82f6;
-  border-radius: 10px;
+  outline: 2px solid var(--accent);
 }
 
 .preview {
   height: 70px;
   border-radius: 10px;
   margin-bottom: 10px;
+  border: 1px solid var(--border);
 }
 
 .preview-dark {
@@ -32,24 +60,47 @@
 }
 
 .preview-light {
-  background: linear-gradient(#f3f4f6, #e5e7eb);
+  background: linear-gradient(#f3f4f6, #d7e6ef);
 }
 
-.preview-ocean {
-  background: linear-gradient(#0f172a, #1e293b);
+.preview-forest {
+  background: linear-gradient(#0f1a17, #182521);
 }
 
+.preview-ember {
+  background: linear-gradient(#201515, #4b2e22);
+}
+
+.preview-plum {
+  background: linear-gradient(#1b1522, #352744);
+}
+
+.preview-paper {
+  background: linear-gradient(#faf5e7, #e6dac0);
+}
 
 .preview-board-classic {
   background: linear-gradient(45deg, #374151 50%, #111827 50%);
 }
 
 .preview-board-wood {
-  background: linear-gradient(45deg, #a1887f 50%, #5d4037 50%);
+  background: linear-gradient(45deg, #b08968 50%, #7f5539 50%);
 }
 
-.preview-board-blue {
-  background: linear-gradient(45deg, #3b82f6 50%, #1e40af 50%);
+.preview-board-royal {
+  background: linear-gradient(45deg, #325ea8 50%, #192f63 50%);
+}
+
+.preview-board-moss {
+  background: linear-gradient(45deg, #5f7a61 50%, #2f4a36 50%);
+}
+
+.preview-board-sunset {
+  background: linear-gradient(45deg, #d97757 50%, #7c2d3a 50%);
+}
+
+.preview-board-marble {
+  background: linear-gradient(45deg, #f8fafc 50%, #94a3b8 50%);
 }
 
 .piece-preview {
@@ -66,22 +117,25 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.theme-card[data-piece="default"] .piece-preview::before {
-  background: linear-gradient(145deg, #ff4d4d, #c70000);
+.theme-card[data-piece="gloss"] .piece-preview::before {
+  background: radial-gradient(circle at 30% 30%, #ffb4b4, #ef4444 45%, #991b1b 100%);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
-.theme-card[data-piece="default"] .piece-preview::after {
-  background: linear-gradient(145deg, #3ddc84, #1e7c4a);
+.theme-card[data-piece="gloss"] .piece-preview::after {
+  background: radial-gradient(circle at 30% 30%, #b8ffd2, #22c55e 45%, #166534 100%);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
 .theme-card[data-piece="flat"] .piece-preview::before {
-  background: #ff4d4d;
+  background: #dc2626;
 }
 
 .theme-card[data-piece="flat"] .piece-preview::after {
-  background: #3ddc84;
+  background: #16a34a;
 }
 
 .theme-card[data-piece="neon"] .piece-preview::before {
@@ -92,4 +146,43 @@
 .theme-card[data-piece="neon"] .piece-preview::after {
   background: #00ff88;
   box-shadow: 0 0 8px #00ff88;
+}
+
+.theme-card[data-piece="pastel"] .piece-preview::before {
+  background: linear-gradient(145deg, #fda4af, #fb7185);
+}
+
+.theme-card[data-piece="pastel"] .piece-preview::after {
+  background: linear-gradient(145deg, #86efac, #4ade80);
+}
+
+.theme-card[data-piece="obsidian"] .piece-preview::before {
+  background: linear-gradient(145deg, #7f1d1d, #ef4444);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+.theme-card[data-piece="obsidian"] .piece-preview::after {
+  background: linear-gradient(145deg, #14532d, #22c55e);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+.theme-card[data-piece="candy"] .piece-preview::before {
+  background: linear-gradient(145deg, #fb7185, #e11d48);
+}
+
+.theme-card[data-piece="candy"] .piece-preview::after {
+  background: linear-gradient(145deg, #2dd4bf, #0f766e);
+}
+
+.theme-card span {
+  display: block;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.theme-card small {
+  display: block;
+  margin-top: 4px;
+  color: var(--mutedText);
+  line-height: 1.4;
 }

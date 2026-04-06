@@ -12,6 +12,28 @@ export const gameApi = {
         return res.json();
     },
 
+    getHistory: async () => {
+        const res = await authFetch(`${API}/history`);
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err || "Failed to load history.");
+        }
+
+        return res.json();
+    },
+
+    getReplay: async (gameId) => {
+        const res = await authFetch(`${API}/${gameId}/replay`);
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err || "Failed to load replay.");
+        }
+
+        return res.json();
+    },
+
     playerMove: async (gameId, payload) => {
         const res = await authFetch(`${API}/${gameId}/player-move`, {
             method: "POST",

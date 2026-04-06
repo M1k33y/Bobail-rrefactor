@@ -51,15 +51,9 @@ public class SqlPasswordResetTokenRepository : IPasswordResetTokenRepository
 
     public async Task DeleteByUserIdAsync(Guid userId)
     {
-        var tokens = await _context.PasswordResetTokens
+        await _context.PasswordResetTokens
             .Where(x => x.UserId == userId)
-            .ToListAsync();
-
-        if (tokens.Count == 0)
-            return;
-
-        _context.PasswordResetTokens.RemoveRange(tokens);
-        await _context.SaveChangesAsync();
+            .ExecuteDeleteAsync();
     }
 
     public async Task MarkAsUsedAsync(Guid tokenId)
