@@ -69,13 +69,13 @@ export default function RegisterPage() {
       setLoading(true);
       setErrors({});
 
-      await register(email.trim(), password.trim(), nickname.trim());
+      const response = await register(email.trim(), password.trim(), nickname.trim());
 
       navigate("/login", {
-        state: { success: "Account created successfully!" },
+        state: { success: response.message || "Account created. Please verify your email." },
       });
-    } catch {
-      setErrors({ general: "Registration failed" });
+    } catch (error) {
+      setErrors({ general: error.message || "Registration failed" });
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function RegisterPage() {
       <div className="register-card">
         <h2>Create Account</h2>
         <p className="register-subtitle">
-          Join and start playing
+          Join and verify your email to start playing
         </p>
 
         <div className="input-wrapper">

@@ -1,0 +1,22 @@
+.board-disabled {
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.thinking-indicator {
+  margin-top: 1rem;
+  font-weight: 600;
+  animation: pulse 1s infinite alternate;
+}
+
+.bot-badge {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}

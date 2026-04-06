@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
+import { resendVerification } from "../api/authApi";
 import "../styles/LoginPage.css";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
@@ -13,15 +14,16 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
+  const [resendLoading, setResendLoading] = useState(false);
 
   useEffect(() => {
     if (location.state?.success) {
       window.history.replaceState({}, document.title);
     }
-  }, []);
+  }, [location.state?.success]);
 
   const validate = () => {
     const newErrors = {};
@@ -58,11 +60,11 @@ export default function LoginPage() {
       setLoading(true);
       setErrors({});
 
-      await loginUser(email.trim(), password.trim());
+      await loginUser(email.trim(), password.trim(), rememberMe);
 
       navigate(location.state?.from || "/");
-    } catch {
-      setErrors({ general: "Invalid email or password" });
+    } catch (error) {
+      setErrors({ general: error.message || "Invalid email or password" });
     } finally {
       setLoading(false);
     }
@@ -74,18 +76,39 @@ export default function LoginPage() {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (resendLoading) return;
+
+    if (!email.trim()) {
+      setErrors({ email: "Enter your email to resend verification" });
+      return;
+    }
+
+    try {
+      setResendLoading(true);
+      const response = await resendVerification(email.trim());
+      setErrors({ general: null });
+      navigate("/login", {
+        replace: true,
+        state: { success: response.message },
+      });
+    } catch (error) {
+      setErrors({ general: error.message || "Could not resend verification email" });
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="login-card">
         <h2>Welcome Back</h2>
         <p className="login-subtitle">Log in to continue playing</p>
 
-        {/*SUCCESS MESSAGE */}
         {successMessage && (
           <span className="success-text">{successMessage}</span>
         )}
 
-        {/* EMAIL */}
         <div className="input-wrapper">
           <Mail className="input-icon left" size={18} />
 
@@ -103,7 +126,6 @@ export default function LoginPage() {
         </div>
         {errors.email && <span className="error-text">{errors.email}</span>}
 
-        {/* PASSWORD */}
         <div className="input-wrapper">
           <Lock className="input-icon left" size={18} />
 
@@ -132,12 +154,29 @@ export default function LoginPage() {
           <span className="error-text">{errors.password}</span>
         )}
 
-        {/* GENERAL ERROR */}
         {errors.general && (
           <span className="error-text">{errors.general}</span>
         )}
 
-        {/* BUTTON */}
+        <div className="login-options">
+          <label className="remember-me">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>Remember me</span>
+          </label>
+
+          <button
+            type="button"
+            className="text-link-button"
+            onClick={() => navigate("/forgot-password")}
+          >
+            Forgot password?
+          </button>
+        </div>
+
         <button
           className="login-button"
           onClick={handleLogin}
@@ -146,8 +185,17 @@ export default function LoginPage() {
           {loading ? "Logging in..." : "Login"}
         </button>
 
+        <button
+          type="button"
+          className="text-link-button"
+          onClick={handleResendVerification}
+          disabled={resendLoading}
+        >
+          {resendLoading ? "Sending verification..." : "Resend verification email"}
+        </button>
+
         <p className="login-footer">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <span onClick={() => navigate("/register")}>
             Register
           </span>
