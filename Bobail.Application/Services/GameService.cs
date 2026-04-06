@@ -1,33 +1,38 @@
-﻿using Bobail.Application.Interfaces.Repositories;
+using Bobail.Application.DTOs;
+using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
 using Bobail.Domain.Board;
 using Bobail.Domain.Common;
 using Bobail.Domain.Games;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Bobail.Application.Services;
 
 public class GameService : IGameService
 {
     private readonly IGameRepository _repository;
+    private readonly IGameStateRepository _gameStateRepository;
+    private readonly IGameHistoryRepository _gameHistoryRepository;
     private readonly IBotService _botService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GameService> _logger;
 
     public GameService(
-    IGameRepository repository,
-    IBotService botService,
-    ILogger<GameService> logger,
-    IServiceScopeFactory scopeFactory)
+        IGameRepository repository,
+        IGameStateRepository gameStateRepository,
+        IGameHistoryRepository gameHistoryRepository,
+        IBotService botService,
+        ILogger<GameService> logger,
+        IServiceScopeFactory scopeFactory)
     {
         _repository = repository;
+        _gameStateRepository = gameStateRepository;
+        _gameHistoryRepository = gameHistoryRepository;
         _botService = botService;
         _logger = logger;
         _scopeFactory = scopeFactory;
     }
-
-
 
     public async Task<Guid> CreateGameAsync(
         GameMode mode,
@@ -38,6 +43,7 @@ public class GameService : IGameService
         var game = new Game(mode, difficulty, botColor);
 
         await _repository.AddAsync(game, cancellationToken);
+        await _gameStateRepository.AddSnapshotAsync(game, cancellationToken);
 
         _logger.LogInformation(
             "Game created. Id: {GameId}, Mode: {Mode}, Difficulty: {Difficulty}",
@@ -48,8 +54,7 @@ public class GameService : IGameService
         return game.Id;
     }
 
-    public Task<Guid> CreateGameAsync(
-        CancellationToken cancellationToken = default)
+    public Task<Guid> CreateGameAsync(CancellationToken cancellationToken = default)
     {
         return CreateGameAsync(
             GameMode.LocalMultiplayer,
@@ -82,7 +87,7 @@ public class GameService : IGameService
         CancellationToken cancellationToken = default)
     {
         var game = await GetGameAsync(gameId, cancellationToken);
-        Console.WriteLine($"Game instance: {game.GetHashCode()}");
+
         _logger.LogInformation(
             "Player move. GameId: {GameId}, From: ({FromRow},{FromCol}) -> To: ({ToRow},{ToCol})",
             gameId, fromRow, fromColumn, toRow, toColumn);
@@ -93,6 +98,7 @@ public class GameService : IGameService
         game.ExecutePlayerMove(from, to);
 
         await _repository.UpdateAsync(game, cancellationToken);
+        await _gameStateRepository.AddSnapshotAsync(game, cancellationToken);
 
         TriggerBotIfNeeded(game);
     }
@@ -114,6 +120,7 @@ public class GameService : IGameService
         game.ExecuteBobailMove(target);
 
         await _repository.UpdateAsync(game, cancellationToken);
+        await _gameStateRepository.AddSnapshotAsync(game, cancellationToken);
 
         TriggerBotIfNeeded(game);
     }
@@ -154,6 +161,9 @@ public class GameService : IGameService
     {
         var game = await _repository.GetByIdAsync(gameId);
 
+        if (game is null)
+            throw new DomainException("Game not found.");
+
         game.Abandon();
 
         await _repository.UpdateAsync(game);
@@ -163,8 +173,7 @@ public class GameService : IGameService
         Guid gameId,
         CancellationToken cancellationToken)
     {
-        var game = await _repository
-            .GetByIdAsync(gameId, cancellationToken);
+        var game = await _repository.GetByIdAsync(gameId, cancellationToken);
 
         if (game is null ||
             !game.IsBotTurn() ||
@@ -177,6 +186,7 @@ public class GameService : IGameService
 
         await _botService.ExecuteSingleMoveAsync(game);
         await _repository.UpdateAsync(game, cancellationToken);
+        await _gameStateRepository.AddSnapshotAsync(game, cancellationToken);
 
         _logger.LogInformation(
             "Bot first move executed. GameId: {GameId}",
@@ -185,9 +195,9 @@ public class GameService : IGameService
         if (game.IsBotTurn() &&
             game.Status == GameStatus.InProgress)
         {
-
             await _botService.ExecuteSingleMoveAsync(game);
             await _repository.UpdateAsync(game, cancellationToken);
+            await _gameStateRepository.AddSnapshotAsync(game, cancellationToken);
 
             _logger.LogInformation(
                 "Bot second move executed. GameId: {GameId}",
@@ -196,9 +206,9 @@ public class GameService : IGameService
     }
 
     public async Task<List<(int row, int col)>> GetValidPlayerMovesAsync(
-    Guid gameId,
-    int row,
-    int col)
+        Guid gameId,
+        int row,
+        int col)
     {
         var game = await GetGameAsync(gameId);
 
@@ -208,5 +218,25 @@ public class GameService : IGameService
         return moves
             .Select(m => (m.Row, m.Column))
             .ToList();
+    }
+
+    public Task<List<GameHistoryResponse>> GetHistoryForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        return _gameHistoryRepository.GetHistoryForUserAsync(userId, cancellationToken);
+    }
+
+    public async Task<GameReplayResponse> GetReplayAsync(
+        Guid gameId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var replay = await _gameHistoryRepository.GetReplayAsync(gameId, userId, cancellationToken);
+
+        if (replay is null)
+            throw new DomainException("Replay not found.");
+
+        return replay;
     }
 }

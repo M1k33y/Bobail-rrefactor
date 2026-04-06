@@ -1,0 +1,138 @@
+.history-page {
+  padding: 32px;
+}
+
+.history-card {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--surfaceStrong), var(--surface));
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 50px var(--shadow);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.history-eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.history-header h1 {
+  margin: 0;
+}
+
+.history-subtitle {
+  margin: 0;
+  color: var(--mutedText);
+  max-width: 320px;
+  text-align: right;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) minmax(180px, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--surfaceSoft);
+  border: 1px solid var(--border);
+}
+
+.history-main,
+.history-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--mutedText);
+}
+
+.history-opponent {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.history-result {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.history-result.win {
+  color: var(--success);
+}
+
+.history-result.loss {
+  color: var(--danger);
+}
+
+.history-meta {
+  color: var(--mutedText);
+  font-size: 14px;
+}
+
+.history-review-button {
+  justify-self: end;
+}
+
+.history-empty,
+.history-error {
+  padding: 32px 20px;
+  text-align: center;
+  border-radius: 18px;
+  background: var(--surfaceSoft);
+  color: var(--mutedText);
+  border: 1px solid var(--border);
+}
+
+.history-error {
+  color: var(--danger);
+}
+
+@media (max-width: 900px) {
+  .history-page {
+    padding: 20px;
+  }
+
+  .history-header {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .history-subtitle {
+    text-align: left;
+    max-width: none;
+  }
+
+  .history-row {
+    grid-template-columns: 1fr;
+  }
+
+  .history-review-button {
+    justify-self: start;
+  }
+}

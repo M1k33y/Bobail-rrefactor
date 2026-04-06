@@ -9,7 +9,7 @@ const readError = async (res, fallbackMessage) => {
       return parsed;
     }
   } catch {
-    // Response is plain text, which is fine here.
+    // plain text deci e ok
   }
 
   return text || fallbackMessage;

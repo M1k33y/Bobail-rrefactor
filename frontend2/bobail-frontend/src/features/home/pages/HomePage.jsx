@@ -4,12 +4,10 @@ import "../styles/HomePage.css";
 
 function HomePage() {
   const navigate = useNavigate();
-  const { logout, isAuthenticated } = useAuth();
+  const { logout, isAuthenticated, nickname } = useAuth();
 
   return (
     <div className="home-container">
-
-      {/* LOGOUT/LOGIN BUTTON */}
       {isAuthenticated ? (
         <button className="logout-btn" onClick={logout}>
           Logout
@@ -21,6 +19,14 @@ function HomePage() {
         >
           Login
         </button>
+      )}
+
+      {isAuthenticated && (
+        <div className="welcome-banner">
+          <span className="welcome-label">Welcome back</span>
+          <strong>{nickname || "Player"}</strong>
+          <span className="welcome-copy">Ready for another Bobail match?</span>
+        </div>
       )}
 
       <div className="hero">
@@ -72,7 +78,6 @@ function HomePage() {
           <p>Challenge the AI.</p>
         </div>
       </div>
-
     </div>
   );
 }

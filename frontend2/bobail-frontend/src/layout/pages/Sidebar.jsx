@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
-import { Play, BookOpen } from "lucide-react";
+import { Play, BookOpen, History } from "lucide-react";
 import { Settings } from "lucide-react";
 import "../styles/Sidebar.css";
 function Sidebar() {
@@ -41,6 +41,11 @@ function Sidebar() {
             <NavLink to="/rules" className="menu-item single">
                 <BookOpen size={18} />
                 <span>Learn</span>
+            </NavLink>
+
+            <NavLink to="/game-history" className="menu-item single">
+                <History size={18} />
+                <span>Game History</span>
             </NavLink>
 
             <NavLink to="/settings" className="menu-item single">

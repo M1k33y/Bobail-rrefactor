@@ -13,6 +13,8 @@ import ForgotPasswordPage from "../features/auth/pages/ForgotPasswordPage";
 import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
 import VerifyEmailPage from "../features/auth/pages/VerifyEmailPage";
 import ProtectedRoute from "../routes/ProtectedRoute.jsx";
+import GameHistoryPage from "../features/gameHistory/pages/GameHistoryPage";
+import GameReviewPage from "../features/gameHistory/pages/GameReviewPage";
 
 export const router = createBrowserRouter([
   {
@@ -53,6 +55,22 @@ export const router = createBrowserRouter([
         ),
       },
       { path: "/play/online", element: <div>Online Coming Soon</div> },
+      {
+        path: "/game-history",
+        element: (
+          <ProtectedRoute>
+            <GameHistoryPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/game-history/:gameId/review",
+        element: (
+          <ProtectedRoute>
+            <GameReviewPage />
+          </ProtectedRoute>
+        ),
+      },
       { path: "/settings", element: <SettingsPage /> },
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },

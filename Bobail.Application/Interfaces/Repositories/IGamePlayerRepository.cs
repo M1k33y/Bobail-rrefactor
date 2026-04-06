@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Bobail.Domain.Games;
 
-namespace Bobail.Application.Interfaces.Repositories
+namespace Bobail.Application.Interfaces.Repositories;
+
+public interface IGamePlayerRepository
 {
-    public interface IGamePlayerRepository
-    {
-        Task AddPlayersForGame(Guid gameId, Guid userId, bool isVsBot);
-    }
+    Task AddPlayersForGame(Guid gameId, Guid userId, bool isVsBot, PlayerColor? botColor = null);
+    Task<bool> UserParticipatesInGameAsync(Guid gameId, Guid userId);
 }

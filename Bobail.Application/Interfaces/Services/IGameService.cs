@@ -1,4 +1,5 @@
-﻿using Bobail.Domain.Games;
+using Bobail.Application.DTOs;
+using Bobail.Domain.Games;
 
 namespace Bobail.Application.Interfaces.Services;
 
@@ -35,9 +36,19 @@ public interface IGameService
         Guid gameId,
         int row,
         int col);
-    Task ExecuteBotCycleAsync(  
-    Guid gameId,
-    CancellationToken cancellationToken);
+
+    Task ExecuteBotCycleAsync(
+        Guid gameId,
+        CancellationToken cancellationToken);
 
     Task AbandonGameAsync(Guid gameId);
+
+    Task<List<GameHistoryResponse>> GetHistoryForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    Task<GameReplayResponse> GetReplayAsync(
+        Guid gameId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

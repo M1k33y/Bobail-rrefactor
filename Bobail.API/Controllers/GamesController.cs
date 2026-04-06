@@ -60,7 +60,8 @@ public class GamesController : ControllerBase
         await _gamePlayerRepository.AddPlayersForGame(
             gameId,
             userId,
-            true);
+            true,
+            request.BotColor);
 
         return Ok(new CreateGameResponse
         {
@@ -163,6 +164,24 @@ public class GamesController : ControllerBase
     {
         await _gameService.AbandonGameAsync(id);
         return NoContent();
+    }
+
+    [Authorize]
+    [HttpGet("history")]
+    public async Task<ActionResult> GetHistory(CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var history = await _gameService.GetHistoryForUserAsync(userId, cancellationToken);
+        return Ok(history);
+    }
+
+    [Authorize]
+    [HttpGet("{id:guid}/replay")]
+    public async Task<ActionResult> GetReplay(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var replay = await _gameService.GetReplayAsync(id, userId, cancellationToken);
+        return Ok(replay);
     }
 
 

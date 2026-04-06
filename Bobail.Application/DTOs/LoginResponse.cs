@@ -5,5 +5,6 @@ namespace Bobail.Application.DTOs
         public string Token { get; set; } = string.Empty;
         public DateTime ExpiresAtUtc { get; set; }
         public bool RememberMe { get; set; }
+        public string Nickname { get; set; } = string.Empty;
     }
 }
