@@ -47,26 +47,15 @@ public class SqlEmailVerificationTokenRepository : IEmailVerificationTokenReposi
 
     public async Task DeleteByUserIdAsync(Guid userId)
     {
-        var tokens = await _context.EmailVerificationTokens
+        await _context.EmailVerificationTokens
             .Where(x => x.UserId == userId)
-            .ToListAsync();
-
-        if (tokens.Count == 0)
-            return;
-
-        _context.EmailVerificationTokens.RemoveRange(tokens);
-        await _context.SaveChangesAsync();
+            .ExecuteDeleteAsync();
     }
 
     public async Task DeleteAsync(Guid tokenId)
     {
-        var entity = await _context.EmailVerificationTokens
-            .FirstOrDefaultAsync(x => x.Id == tokenId);
-
-        if (entity == null)
-            return;
-
-        _context.EmailVerificationTokens.Remove(entity);
-        await _context.SaveChangesAsync();
+        await _context.EmailVerificationTokens
+            .Where(x => x.Id == tokenId)
+            .ExecuteDeleteAsync();
     }
 }
