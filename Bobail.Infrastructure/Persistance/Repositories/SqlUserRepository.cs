@@ -23,6 +23,7 @@ public class SqlUserRepository : IUserRepository
             Role = user.Role,
             CreatedAt = user.CreatedAt,
             Nickname = user.Nickname,
+            IsActive = user.IsActive,
             IsEmailVerified = user.IsEmailVerified,
             EmailVerifiedAtUtc = user.EmailVerifiedAtUtc
         };
@@ -59,6 +60,7 @@ public class SqlUserRepository : IUserRepository
         entity.Role = user.Role;
         entity.CreatedAt = user.CreatedAt;
         entity.Nickname = user.Nickname;
+        entity.IsActive = user.IsActive;
         entity.IsEmailVerified = user.IsEmailVerified;
         entity.EmailVerifiedAtUtc = user.EmailVerifiedAtUtc;
 
@@ -75,6 +77,7 @@ public class SqlUserRepository : IUserRepository
             Role = entity.Role,
             CreatedAt = entity.CreatedAt,
             Nickname = entity.Nickname,
+            IsActive = entity.IsActive,
             IsEmailVerified = entity.IsEmailVerified,
             EmailVerifiedAtUtc = entity.EmailVerifiedAtUtc
         };

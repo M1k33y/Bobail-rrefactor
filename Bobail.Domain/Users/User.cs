@@ -13,11 +13,13 @@ namespace Bobail.Domain.Users
         public string Nickname { get; set; } = null!;
 
         public string Email { get; set; } = null!;
-    public string PasswordHash { get; set; } = null!;
+        public string PasswordHash { get; set; } = null!;
 
         public int Role { get; set; } // 0 = User, 1 = Admin
 
         public DateTime CreatedAt { get; set; }
+
+        public bool IsActive { get; set; } = true;
 
         public bool IsEmailVerified { get; set; }
 

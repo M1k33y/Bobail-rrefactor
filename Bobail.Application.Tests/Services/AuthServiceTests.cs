@@ -70,10 +70,36 @@ namespace Bobail.Application.Tests.Services
 
             Assert.NotEqual(Guid.Empty, response.UserId);
             Assert.NotNull(capturedUser);
+            Assert.True(capturedUser!.IsActive);
             Assert.False(capturedUser!.IsEmailVerified);
             Assert.True(BCrypt.Net.BCrypt.Verify("StrongPass1", capturedUser.PasswordHash));
             verificationTokenRepoMock.Verify(x => x.AddAsync(It.IsAny<EmailVerificationToken>()), Times.Once);
             emailSenderMock.Verify(x => x.SendAsync("test@mail.com", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Login_Should_Fail_When_User_Is_Inactive()
+        {
+            var password = "StrongPass1";
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@mail.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                IsActive = false,
+                IsEmailVerified = true
+            };
+
+            var userRepoMock = new Mock<IUserRepository>();
+            userRepoMock.Setup(x => x.GetByEmailAsync(It.IsAny<string>()))
+                .ReturnsAsync(user);
+
+            var service = CreateService(userRepoMock);
+
+            var exception = await Assert.ThrowsAsync<Exception>(() =>
+                service.LoginAsync("test@mail.com", password, false));
+
+            Assert.Equal("This account has been deactivated. Please contact an administrator.", exception.Message);
         }
 
         [Fact]
@@ -110,6 +136,7 @@ namespace Bobail.Application.Tests.Services
                 Email = "test@mail.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 Role = 1,
+                IsActive = true,
                 IsEmailVerified = true
             };
 
@@ -138,6 +165,7 @@ namespace Bobail.Application.Tests.Services
                 Email = "test@mail.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("StrongPass1"),
                 Nickname = "mihai",
+                IsActive = true,
                 IsEmailVerified = true
             };
 
@@ -174,6 +202,7 @@ namespace Bobail.Application.Tests.Services
                 Email = "test@mail.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass"),
                 Nickname = "mihai",
+                IsActive = true,
                 IsEmailVerified = true
             };
 
@@ -238,6 +267,7 @@ namespace Bobail.Application.Tests.Services
                 Email = "test@mail.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass"),
                 Nickname = "mihai",
+                IsActive = true,
                 IsEmailVerified = false
             };
 

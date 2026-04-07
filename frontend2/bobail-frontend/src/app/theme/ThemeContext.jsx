@@ -203,9 +203,9 @@ export function ThemeProvider({ children }) {
       });
     };
 
-    applyVars(appThemes[appTheme]);
-    applyVars(boardThemes[boardTheme]);
-    applyVars(pieceStyles[pieceTheme]);
+    applyVars(appThemes[appTheme] || appThemes.dark);
+    applyVars(boardThemes[boardTheme] || boardThemes.classic);
+    applyVars(pieceStyles[pieceTheme] || pieceStyles.gloss);
 
     localStorage.setItem("appTheme", appTheme);
     localStorage.setItem("boardTheme", boardTheme);
