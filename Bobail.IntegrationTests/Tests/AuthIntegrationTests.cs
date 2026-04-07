@@ -4,8 +4,10 @@ using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Bobail.Application.DTOs;
 using Bobail.Infrastructure.Email;
+using Bobail.Infrastructure.Persistence;
 using Bobail.IntegrationTests.Factories;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace Bobail.IntegrationTests
@@ -80,6 +82,40 @@ namespace Bobail.IntegrationTests
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
             Assert.Contains("verify your email", error, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task Login_Should_Fail_When_User_Is_Inactive()
+        {
+            var email = $"inactive_{Guid.NewGuid()}@mail.com";
+
+            await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest
+            {
+                Email = email,
+                Password = ValidPassword,
+                Nickname = "mihai"
+            });
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+                var user = await dbContext.Users.FirstAsync(x => x.Email == email);
+                user.IsActive = false;
+                user.IsEmailVerified = true;
+                await dbContext.SaveChangesAsync();
+            }
+
+            var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest
+            {
+                Email = email,
+                Password = ValidPassword,
+                RememberMe = false
+            });
+
+            var error = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Contains("deactivated", error, StringComparison.OrdinalIgnoreCase);
         }
 
        

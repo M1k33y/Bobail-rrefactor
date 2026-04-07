@@ -59,6 +59,7 @@ public class AuthService : IAuthService
             Role = 0,
             CreatedAt = DateTime.UtcNow,
             Nickname = nickname,
+            IsActive = true,
             IsEmailVerified = false
         };
 
@@ -84,6 +85,9 @@ public class AuthService : IAuthService
         if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             throw new Exception("Invalid credentials");
 
+        if (!user.IsActive)
+            throw new Exception("This account has been deactivated. Please contact an administrator.");
+
         if (!user.IsEmailVerified)
             throw new Exception("Please verify your email before logging in");
 
@@ -101,7 +105,7 @@ public class AuthService : IAuthService
             throw new Exception("Invalid email");
 
         var user = await _userRepository.GetByEmailAsync(email);
-        if (user == null || !user.IsEmailVerified)
+        if (user == null || !user.IsActive || !user.IsEmailVerified)
         {
             return new ForgotPasswordResponse
             {
@@ -192,7 +196,7 @@ public class AuthService : IAuthService
             throw new Exception("Invalid email");
 
         var user = await _userRepository.GetByEmailAsync(email);
-        if (user == null || user.IsEmailVerified)
+        if (user == null || !user.IsActive || user.IsEmailVerified)
             return;
 
         await SendVerificationEmailAsync(user);

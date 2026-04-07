@@ -13,6 +13,8 @@ public class UserEntity
 
     public DateTime CreatedAt { get; set; }
 
+    public bool IsActive { get; set; }
+
     public bool IsEmailVerified { get; set; }
 
     public DateTime? EmailVerifiedAtUtc { get; set; }

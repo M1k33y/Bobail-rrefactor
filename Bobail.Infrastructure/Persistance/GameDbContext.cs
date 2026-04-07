@@ -50,6 +50,7 @@ public class GameDbContext : DbContext
             entity.Property(x => x.Role);
             entity.Property(x => x.CreatedAt);
             entity.Property(x => x.Nickname).IsRequired();
+            entity.Property(x => x.IsActive).HasDefaultValue(true);
             entity.Property(x => x.IsEmailVerified).HasDefaultValue(false);
             entity.Property(x => x.EmailVerifiedAtUtc);
         });
