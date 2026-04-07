@@ -15,6 +15,7 @@
   border-radius: 16px;
   background: linear-gradient(145deg, #1f2937, #111827);
   box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+  color: #f9fafb;
   text-align: center;
   position: relative;
   animation: fadeIn 0.25s ease;
@@ -22,12 +23,14 @@
 
 .modal-card h2 {
   margin-top: 0;
+  color: #f9fafb;
 }
 
 .winner-text {
   margin: 15px 0 25px 0;
   font-size: 16px;
   opacity: 0.9;
+  color: rgba(249, 250, 251, 0.92);
 }
 
 .modal-close {
@@ -38,7 +41,7 @@
   border: none;
   font-size: 22px;
   cursor: pointer;
-  color: #aaa;
+  color: rgba(249, 250, 251, 0.7);
 }
 
 .modal-close:hover {

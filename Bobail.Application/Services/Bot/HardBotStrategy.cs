@@ -12,7 +12,7 @@ public class HardBotStrategy : IBotStrategy
 
     public BotDifficulty Difficulty => BotDifficulty.Hard;
 
-    private const int MaxDepth = 3;
+    private const int MaxDepth = 5;
 
   
     private const int RootMoveLimit = 8;
