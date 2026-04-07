@@ -121,7 +121,7 @@ public class HardBoardEvaluator : IBoardEvaluator
             var forwardPos = new Position(nextRow, bobail.Position.Column);
 
             if (game.Board.IsEmpty(forwardPos))
-                score += 200; // drum liber înainte
+                score += 200; // drum liber inainte
         }
 
         return score;
