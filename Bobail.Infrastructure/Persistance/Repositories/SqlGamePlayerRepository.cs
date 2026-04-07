@@ -14,6 +14,14 @@ public class SqlGamePlayerRepository : IGamePlayerRepository
 
     public async Task AddPlayersForGame(Guid gameId, Guid userId, bool isVsBot, PlayerColor? botColor = null)
     {
+        var alreadyParticipant = await _context.GamePlayers
+            .AnyAsync(x => x.GameId == gameId && x.UserId == userId);
+
+        if (alreadyParticipant)
+        {
+            return;
+        }
+
         var players = new List<GamePlayerEntity>();
 
         if (isVsBot)
@@ -23,40 +31,61 @@ public class SqlGamePlayerRepository : IGamePlayerRepository
                 ? PlayerColor.Green
                 : PlayerColor.Red;
 
-            players.Add(new GamePlayerEntity
-            {
-                Id = Guid.NewGuid(),
-                GameId = gameId,
-                UserId = userId,
-                Color = (int)userColor,
-                IsBot = false
-            });
+            var userSlotTaken = await _context.GamePlayers
+                .AnyAsync(x => x.GameId == gameId && x.Color == (int)userColor);
 
-            players.Add(new GamePlayerEntity
+            if (!userSlotTaken)
             {
-                Id = Guid.NewGuid(),
-                GameId = gameId,
-                UserId = null,
-                Color = (int)resolvedBotColor,
-                IsBot = true
-            });
+                players.Add(new GamePlayerEntity
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = gameId,
+                    UserId = userId,
+                    Color = (int)userColor,
+                    IsBot = false
+                });
+            }
+
+            var botSlotTaken = await _context.GamePlayers
+                .AnyAsync(x => x.GameId == gameId && x.Color == (int)resolvedBotColor && x.IsBot);
+
+            if (!botSlotTaken)
+            {
+                players.Add(new GamePlayerEntity
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = gameId,
+                    UserId = null,
+                    Color = (int)resolvedBotColor,
+                    IsBot = true
+                });
+            }
         }
         else
         {
-            players.Add(new GamePlayerEntity
+            var slotTaken = await _context.GamePlayers
+                .AnyAsync(x => x.GameId == gameId && x.Color == (int)PlayerColor.Red);
+
+            if (!slotTaken)
             {
-                Id = Guid.NewGuid(),
-                GameId = gameId,
-                UserId = userId,
-                Color = (int)PlayerColor.Red,
-                IsBot = false
-            });
+                players.Add(new GamePlayerEntity
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = gameId,
+                    UserId = userId,
+                    Color = (int)PlayerColor.Red,
+                    IsBot = false
+                });
+            }
 
             // future multiplayer player mapping will be added here
         }
 
-        _context.GamePlayers.AddRange(players);
-        await _context.SaveChangesAsync();
+        if (players.Count > 0)
+        {
+            _context.GamePlayers.AddRange(players);
+            await _context.SaveChangesAsync();
+        }
     }
 
     public Task<bool> UserParticipatesInGameAsync(Guid gameId, Guid userId)

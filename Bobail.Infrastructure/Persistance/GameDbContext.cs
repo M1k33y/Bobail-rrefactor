@@ -93,6 +93,21 @@ public class GameDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.GameId);
 
+            
+            entity.HasIndex(x => new { x.GameId, x.Color })
+                .IsUnique()
+                .HasDatabaseName("IX_GamePlayers_GameId_Color");
+
+            entity.HasIndex(x => new { x.GameId, x.UserId })
+                .IsUnique()
+                .HasFilter("[UserId] IS NOT NULL")
+                .HasDatabaseName("IX_GamePlayers_GameId_UserId_Unique");
+
+            entity.HasOne<UserEntity>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             entity.Property(x => x.Color);
             entity.Property(x => x.IsBot);
         });
@@ -112,6 +127,14 @@ public class GameDbContext : DbContext
 
             entity.HasIndex(x => new { x.GameId, x.MoveNumber })
                 .IsUnique();
+        });
+
+        modelBuilder.Entity<GameEntity>(entity =>
+        {
+            entity.HasOne<UserEntity>()
+                .WithMany()
+                .HasForeignKey(x => x.WinnerUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }
