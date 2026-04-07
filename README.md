@@ -167,13 +167,108 @@ Idei:
 
 ## Login Features
 
-* [ ] Forgot password
-* [ ] Feedback UI pentru password match
+* [x] Forgot password
+* [x] Feedback UI pentru password match
 * [ ] Password strength indicator (optional)
-* [ ] Email verification
-* [ ] Remember me
+* [x] Email verification
+* [x] Remember me
 
 ---
+
+## Player Stats & Rating System
+
+---
+
+## GameStats
+
+### Objective
+
+Să avem statistici agregate pentru fiecare utilizator, ușor de accesat și afișat.
+
+### Fields:
+
+* TotalGamesPlayed
+* TotalWins
+* TotalLosses
+* MemberSince (data creării contului)
+* CurrentRating
+
+### Notes:
+
+* `CurrentRating` este sursa principală pentru:
+
+  * leaderboard
+  * matchmaking (în viitor)
+  * afișare profil
+
+---
+
+## RatingHistory
+
+### Objective
+
+Păstrarea unui istoric complet al modificărilor de rating pentru analiză și audit.
+
+### Table Structure:
+
+* Id
+* UserId
+* OldRating
+* NewRating
+* GameId
+* CreatedAt
+
+---
+
+## Update Flow (după un joc)
+
+### 1. Update rating în Users
+
+```sql
+UPDATE Users SET Rating = 1230 WHERE Id = A;
+UPDATE Users SET Rating = 1270 WHERE Id = B;
+```
+
+---
+
+### 2. Insert în RatingHistory
+
+```sql
+INSERT INTO RatingHistory (UserId, OldRating, NewRating, GameId)
+VALUES (A, 1200, 1230, 45);
+
+INSERT INTO RatingHistory (UserId, OldRating, NewRating, GameId)
+VALUES (B, 1300, 1270, 45);
+```
+
+---
+
+## Design Decision
+
+* `Users.Rating` → rating curent (folosit în aplicație în timp real)
+* `RatingHistory` → istoric complet (folosit pentru analize, grafice, debugging)
+
+---
+
+## Beneficii
+
+* Acces rapid la rating curent (fără calcule suplimentare)
+* Istoric complet pentru:
+
+  * evoluție rating
+  * statistici
+  * posibile feature-uri viitoare (grafice, rank progression)
+
+---
+
+## Posibile Extensii
+
+* WinRate calculat automat
+* Streak (win/lose streak)
+* HighestRating
+* Rating decay (pentru inactivitate)
+* Grafice evoluție rating
+
 
 # Multiplayer
 
