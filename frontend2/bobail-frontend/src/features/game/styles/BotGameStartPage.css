@@ -1,5 +1,11 @@
 .bot-config-card {
   text-align: center;
+  color: var(--text);
+}
+
+.bot-config-card h2,
+.bot-config-card h3 {
+  color: var(--text);
 }
 
 .settings-section.centered {
