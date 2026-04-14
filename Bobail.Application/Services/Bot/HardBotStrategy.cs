@@ -1,4 +1,4 @@
-﻿using Bobail.Application.Services.Bot;
+using Bobail.Application.Services.Bot;
 using Bobail.Domain.Games;
 using Microsoft.Extensions.Logging;
 
@@ -6,19 +6,20 @@ namespace Bobail.Infrastructure.Bots;
 
 public class HardBotStrategy : IBotStrategy
 {
+    private readonly record struct SearchCacheKey(
+        string State,
+        int Depth,
+        bool MaximizingPlayer,
+        PlayerColor BotColor);
 
     private readonly HardBoardEvaluator _evaluator;
     private readonly ILogger<HardBotStrategy> _logger;
+    private readonly Dictionary<SearchCacheKey, int> _transpositionTable = new();
 
     public BotDifficulty Difficulty => BotDifficulty.Hard;
 
-    private const int MaxDepth = 5;
-
-  
-    private const int RootMoveLimit = 8;
-    private const int InnerMoveLimit = 6;
-
-    private static readonly Random _random = new();
+    private const int MaxDepth = 3;
+    private const int RootMoveLimit = 5;
 
     public HardBotStrategy(
         HardBoardEvaluator evaluator,
@@ -32,36 +33,40 @@ public class HardBotStrategy : IBotStrategy
     {
         _logger.LogInformation("Hard AI started calculation. Depth: {Depth}", MaxDepth);
 
-        var moveData = PrepareOrderedMoves(game, game.CurrentTurn, RootMoveLimit);
+        _transpositionTable.Clear();
+
+        var moveData = PrepareOrderedMoves(
+            game,
+            botColor: game.CurrentTurn,
+            maximizingPlayer: true,
+            takeLimit: RootMoveLimit);
+
+        if (moveData.Count == 0)
+            throw new InvalidOperationException("Hard bot has no valid moves.");
 
         int bestScore = int.MinValue;
-        var bestMoves = new List<BotMove>();
+        BotMove? bestMove = null;
 
         foreach (var data in moveData)
         {
             int score = Minimax(
                 data.clone,
                 MaxDepth - 1,
-                false,
-                int.MinValue,
-                int.MaxValue,
-                game.CurrentTurn);
+                maximizingPlayer: false,
+                alpha: int.MinValue,
+                beta: int.MaxValue,
+                botColor: game.CurrentTurn);
 
             if (score > bestScore)
             {
                 bestScore = score;
-                bestMoves.Clear();
-                bestMoves.Add(data.move);
-            }
-            else if (Math.Abs(score - bestScore) < 200)
-            {
-                bestMoves.Add(data.move);
+                bestMove = data.move;
             }
         }
 
         _logger.LogInformation("Hard AI selected move with score {Score}", bestScore);
 
-        return bestMoves[_random.Next(bestMoves.Count)];
+        return bestMove!;
     }
 
     private int Minimax(
@@ -75,7 +80,27 @@ public class HardBotStrategy : IBotStrategy
         if (depth == 0 || game.Status == GameStatus.Finished)
             return _evaluator.Evaluate(game, botColor);
 
-        var moveData = PrepareOrderedMoves(game, botColor, InnerMoveLimit);
+        var cacheKey = new SearchCacheKey(
+            BuildStateKey(game),
+            depth,
+            maximizingPlayer,
+            botColor);
+
+        if (_transpositionTable.TryGetValue(cacheKey, out int cachedScore))
+            return cachedScore;
+
+        var moveData = PrepareOrderedMoves(
+            game,
+            botColor,
+            maximizingPlayer,
+            takeLimit: null);
+
+        if (moveData.Count == 0)
+        {
+            int noMoveScore = game.CurrentTurn == botColor ? -1_000_000 : 1_000_000;
+            _transpositionTable[cacheKey] = noMoveScore;
+            return noMoveScore;
+        }
 
         if (maximizingPlayer)
         {
@@ -86,7 +111,7 @@ public class HardBotStrategy : IBotStrategy
                 int eval = Minimax(
                     data.clone,
                     depth - 1,
-                    false,
+                    maximizingPlayer: false,
                     alpha,
                     beta,
                     botColor);
@@ -98,37 +123,38 @@ public class HardBotStrategy : IBotStrategy
                     break;
             }
 
+            _transpositionTable[cacheKey] = maxEval;
             return maxEval;
         }
-        else
+
+        int minEval = int.MaxValue;
+
+        foreach (var data in moveData)
         {
-            int minEval = int.MaxValue;
+            int eval = Minimax(
+                data.clone,
+                depth - 1,
+                maximizingPlayer: true,
+                alpha,
+                beta,
+                botColor);
 
-            foreach (var data in moveData)
-            {
-                int eval = Minimax(
-                    data.clone,
-                    depth - 1,
-                    true,
-                    alpha,
-                    beta,
-                    botColor);
+            minEval = Math.Min(minEval, eval);
+            beta = Math.Min(beta, eval);
 
-                minEval = Math.Min(minEval, eval);
-                beta = Math.Min(beta, eval);
-
-                if (beta <= alpha)
-                    break;
-            }
-
-            return minEval;
+            if (beta <= alpha)
+                break;
         }
+
+        _transpositionTable[cacheKey] = minEval;
+        return minEval;
     }
 
     private List<(BotMove move, Game clone, int score)> PrepareOrderedMoves(
         Game game,
         PlayerColor botColor,
-        int takeLimit)
+        bool maximizingPlayer,
+        int? takeLimit)
     {
         var moveData = new List<(BotMove move, Game clone, int score)>();
 
@@ -138,14 +164,17 @@ public class HardBotStrategy : IBotStrategy
             ApplyMove(clone, move);
 
             int score = _evaluator.Evaluate(clone, botColor);
-
             moveData.Add((move, clone, score));
         }
 
-        return moveData
-            .OrderByDescending(x => x.score)
-            .Take(takeLimit)
-            .ToList();
+        IEnumerable<(BotMove move, Game clone, int score)> orderedMoves = maximizingPlayer
+            ? moveData.OrderByDescending(x => x.score)
+            : moveData.OrderBy(x => x.score);
+
+        if (takeLimit.HasValue)
+            orderedMoves = orderedMoves.Take(takeLimit.Value);
+
+        return orderedMoves.ToList();
     }
 
     private List<BotMove> GenerateAllMoves(Game game)
@@ -154,22 +183,20 @@ public class HardBotStrategy : IBotStrategy
 
         if (game.CurrentPhase == TurnPhase.BobailMoveRequired)
         {
-            foreach (var m in game.GetValidBobailMoves())
-                moves.Add(BotMove.Bobail(m));
+            foreach (var move in game.GetValidBobailMoves())
+                moves.Add(BotMove.Bobail(move));
         }
         else
         {
             var pieces = game.Board.Pieces
-                .Where(p => !p.IsBobail &&
-                            p.Owner == game.CurrentTurn);
+                .Where(p => !p.IsBobail && p.Owner == game.CurrentTurn);
 
             foreach (var piece in pieces)
             {
-                var validMoves =
-                    game.GetValidPlayerMoves(piece.Position);
+                var validMoves = game.GetValidPlayerMoves(piece.Position);
 
-                foreach (var m in validMoves)
-                    moves.Add(BotMove.Piece(piece.Position, m));
+                foreach (var move in validMoves)
+                    moves.Add(BotMove.Piece(piece.Position, move));
             }
         }
 
@@ -182,5 +209,24 @@ public class HardBotStrategy : IBotStrategy
             clone.ExecuteBobailMove(move.To);
         else
             clone.ExecutePlayerMove(move.From, move.To);
+    }
+
+    private static string BuildStateKey(Game game)
+    {
+        var pieces = game.Board.Pieces
+            .OrderBy(p => p.IsBobail ? 0 : 1)
+            .ThenBy(p => p.IsBobail ? -1 : (int)(p.Owner ?? throw new InvalidOperationException("Non-Bobail piece must have an owner.")))
+            .ThenBy(p => p.Position.Row)
+            .ThenBy(p => p.Position.Column)
+            .Select(p =>
+            {
+                string owner = p.IsBobail
+                    ? "B"
+                    : ((int)(p.Owner ?? throw new InvalidOperationException("Non-Bobail piece must have an owner."))).ToString();
+                return $"{owner}:{p.Position.Row},{p.Position.Column}";
+            });
+
+        return string.Join("|", pieces) +
+               $"|T:{(int)game.CurrentTurn}|P:{(int)game.CurrentPhase}|S:{(int)game.Status}";
     }
 }

@@ -15,6 +15,10 @@ public class EasyBotStrategy : IBotStrategy
         if (game.CurrentPhase == TurnPhase.BobailMoveRequired)
         {
             var moves = game.GetValidBobailMoves();
+
+            if (moves.Count == 0)
+                throw new InvalidOperationException("Easy bot has no valid Bobail moves.");
+
             var isRed = game.CurrentTurn == PlayerColor.Red;
 
             List<Position> preferred;
@@ -50,6 +54,9 @@ public class EasyBotStrategy : IBotStrategy
             foreach (var move in moves)
                 possibleMoves.Add((piece.Position, move));
         }
+
+        if (possibleMoves.Count == 0)
+            throw new InvalidOperationException("Easy bot has no valid player moves.");
 
         var selectedMove =
             possibleMoves[_random.Next(possibleMoves.Count)];

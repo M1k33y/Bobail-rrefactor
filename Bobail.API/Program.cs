@@ -77,6 +77,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IBotService, BotService>();
 
+builder.Services.AddSingleton<EvaluationWeights>();
+
 
 builder.Services.AddScoped<MediumBoardEvaluator>();
 builder.Services.AddScoped<HardBoardEvaluator>();
