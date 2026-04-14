@@ -2,166 +2,18 @@
 
 ## AI Improvements (Hard Difficulty)
 
-### Probleme actuale
-
-* Hard AI se mișcă lent
-* Se fac foarte multe clone de game state
-* Minimax recalculează aceleași poziții
-* Nu există move ordering eficient
-
----
-
-## Soluții propuse
-
-### 1. Caching pentru funcții
-
-Cache pe baza:
-
-* nume funcție + parametri
-
-Exemplu cheie:
-
-```
-functionName + serializedParams
-```
-
-Se poate salva:
-
-* scorul evaluării
-* mutarea optimă
-
-**Beneficiu:**
-
-* Elimină calcule duplicate
-
----
-
-### 2. Transposition Table
-
-Cache special pentru Minimax
-
-Stochează:
-
-* hash-ul poziției
-* scor
-* depth
-* best move
-
-Implementare:
-
-```
-Dictionary<Hash, TranspositionEntry>
-```
-
-Ideal:
-
-* Zobrist hashing pentru board
-
-**Beneficiu:**
-
-* Evită recalcularea acelorași poziții
-
----
-
-### 3. Time-Based Search
-
-În loc de depth fix:
-
-```
-caut până la depth X
-```
-
-Folosim:
-
-```
-rulează 1 secundă și caută cât de mult se poate
-```
-
-Implementare:
-
-* Iterative deepening:
-
-```
-depth = 1 → 2 → 3 → ... până expiră timpul
-```
-
-**Beneficiu:**
-
-* AI mai stabil
-* Evită blocaje
-
----
-
-### 4. UndoMove în loc de Clone
-
-Problema:
-
-* Clonăm game state foarte des
-
-Soluție:
-
-```
-ApplyMove(move)
-UndoMove(move)
-```
-
-Workflow:
-
-```
-ApplyMove
-→ Minimax
-→ UndoMove
-```
-
-**Beneficii:**
-
-* Performanță mult mai bună
-* Mai puțin memory overhead
-
----
-
-### 5. Move Ordering
-
-Ordinea mutărilor influențează mult Alpha-Beta pruning
-
-Idei:
-
-* mutări de captură mai întâi
-* best move din transposition table
-* killer moves
-* history heuristic
-
-**Beneficiu:**
-
-* Search mai rapid
-
----
-
-### 6. Alte optimizări
-
-* reducere alocări
-* evitarea clonărilor inutile
-* refolosire structuri de date
-
----
-
 ## Next Tasks (AI)
 
 ### High priority
 
-* [ ] Implement UndoMove
-* [ ] Adaugă Transposition Table
+
+* [x] Adaugă Transposition Table
 * [ ] Time-based search (iterative deepening)
 
 ### Medium
 
-* [ ] Move ordering
+* [x] Move ordering
 * [ ] Caching simplu pe funcții
-
-### Nice to have
-
-* [ ] Killer moves
-* [ ] History heuristic
 
 ---
 
