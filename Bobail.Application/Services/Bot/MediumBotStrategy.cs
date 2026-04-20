@@ -1,141 +1,222 @@
-﻿using Bobail.Application.Services.Bot;
+using Bobail.Application.Interfaces.Services;
+using Bobail.Application.Services.Bot;
 using Bobail.Domain.Games;
+using Microsoft.Extensions.Logging;
 
 namespace Bobail.Infrastructure.Bots;
 
 public class MediumBotStrategy : IBotStrategy
 {
+    private readonly record struct SearchCacheKey(
+        string State,
+        int Depth,
+        bool MaximizingPlayer,
+        PlayerColor BotColor);
+
     private readonly MediumBoardEvaluator _evaluator;
+    private readonly ILogger<MediumBotStrategy> _logger;
+    private readonly Dictionary<SearchCacheKey, int> _transpositionTable = new();
+
+    private const int MaxDepth = 2;
+    private const int RootMoveLimit = 5;
+    private const int CandidatePoolSize = 4;
+    private const int ScoreWindow = 1_200;
+    private const double ImperfectChoiceChance = 0.4;
+
     public BotDifficulty Difficulty => BotDifficulty.Medium;
 
     public MediumBotStrategy(
-    MediumBoardEvaluator evaluator)
+        MediumBoardEvaluator evaluator,
+        ILogger<MediumBotStrategy> logger)
     {
         _evaluator = evaluator;
+        _logger = logger;
     }
 
     public BotMove DecideMove(Game game)
     {
-        var possibleMoves = GenerateAllMoves(game);
+        _logger.LogInformation("Medium AI started calculation. Depth: {Depth}", MaxDepth);
 
-        if (possibleMoves.Count == 0)
-            throw new InvalidOperationException("Bot has no valid moves.");
+        _transpositionTable.Clear();
 
-        int bestScore = int.MinValue;
-        BotMove bestMove = possibleMoves[0];
+        var moveData = PrepareOrderedMoves(
+            game,
+            botColor: game.CurrentTurn,
+            maximizingPlayer: true,
+            takeLimit: RootMoveLimit);
 
-        foreach (var move in possibleMoves)
+        if (moveData.Count == 0)
+            throw new InvalidOperationException("Medium bot has no valid moves.");
+
+        var scoredMoves = new List<(BotMove move, int score)>(moveData.Count);
+
+        foreach (var data in moveData)
+        {
+            int score = Minimax(
+                data.clone,
+                MaxDepth - 1,
+                maximizingPlayer: false,
+                alpha: int.MinValue,
+                beta: int.MaxValue,
+                botColor: game.CurrentTurn);
+
+            scoredMoves.Add((data.move, score));
+        }
+
+        int bestScore = scoredMoves.Max(x => x.score);
+
+        var candidateMoves = scoredMoves
+            .Where(x => bestScore - x.score <= ScoreWindow)
+            .OrderByDescending(x => x.score)
+            .Take(CandidatePoolSize)
+            .ToList();
+
+        var selectedMove = ChooseMediumMove(candidateMoves);
+
+        _logger.LogInformation(
+            "Medium AI selected move with score {SelectedScore} from {CandidateCount} near-best candidates. Best score: {BestScore}",
+            selectedMove.score,
+            candidateMoves.Count,
+            bestScore);
+
+        return selectedMove.move;
+    }
+
+    private int Minimax(
+        Game game,
+        int depth,
+        bool maximizingPlayer,
+        int alpha,
+        int beta,
+        PlayerColor botColor)
+    {
+        if (depth == 0 || game.Status == GameStatus.Finished)
+            return _evaluator.Evaluate(game, botColor);
+
+        var cacheKey = new SearchCacheKey(
+            BuildStateKey(game),
+            depth,
+            maximizingPlayer,
+            botColor);
+
+        if (_transpositionTable.TryGetValue(cacheKey, out int cachedScore))
+            return cachedScore;
+
+        var moveData = PrepareOrderedMoves(
+            game,
+            botColor,
+            maximizingPlayer,
+            takeLimit: null);
+
+        if (moveData.Count == 0)
+        {
+            int noMoveScore = game.CurrentTurn == botColor ? -1_000_000 : 1_000_000;
+            _transpositionTable[cacheKey] = noMoveScore;
+            return noMoveScore;
+        }
+
+        if (maximizingPlayer)
+        {
+            int maxEval = int.MinValue;
+
+            foreach (var data in moveData)
+            {
+                int eval = Minimax(
+                    data.clone,
+                    depth - 1,
+                    maximizingPlayer: false,
+                    alpha,
+                    beta,
+                    botColor);
+
+                maxEval = Math.Max(maxEval, eval);
+                alpha = Math.Max(alpha, eval);
+
+                if (beta <= alpha)
+                    break;
+            }
+
+            _transpositionTable[cacheKey] = maxEval;
+            return maxEval;
+        }
+
+        int minEval = int.MaxValue;
+
+        foreach (var data in moveData)
+        {
+            int eval = Minimax(
+                data.clone,
+                depth - 1,
+                maximizingPlayer: true,
+                alpha,
+                beta,
+                botColor);
+
+            minEval = Math.Min(minEval, eval);
+            beta = Math.Min(beta, eval);
+
+            if (beta <= alpha)
+                break;
+        }
+
+        _transpositionTable[cacheKey] = minEval;
+        return minEval;
+    }
+
+    private List<(BotMove move, Game clone, int score)> PrepareOrderedMoves(
+        Game game,
+        PlayerColor botColor,
+        bool maximizingPlayer,
+        int? takeLimit)
+    {
+        var moveData = new List<(BotMove move, Game clone, int score)>();
+
+        foreach (var move in GenerateAllMoves(game))
         {
             var clone = game.Clone();
-
             ApplyMove(clone, move);
 
-            int score = _evaluator.Evaluate(clone, game.CurrentTurn);
-
-            if (AllowsImmediateOpponentWin(clone, game.CurrentTurn))
-                score -= 80000;
-
-            if (CanWinNextTurn(clone, game.CurrentTurn))
-                score += 60000;
-           
-            if (score > bestScore)
-            {
-                bestScore = score;
-                bestMove = move;
-            }
+            int score = _evaluator.Evaluate(clone, botColor);
+            moveData.Add((move, clone, score));
         }
 
-        return bestMove;
+        IEnumerable<(BotMove move, Game clone, int score)> orderedMoves = maximizingPlayer
+            ? moveData.OrderByDescending(x => x.score)
+            : moveData.OrderBy(x => x.score);
+
+        if (takeLimit.HasValue)
+            orderedMoves = orderedMoves.Take(takeLimit.Value);
+
+        return orderedMoves.ToList();
     }
 
-    private bool AllowsImmediateOpponentWin(Game gameAfterBotMove, PlayerColor botColor)
-    {
-        if (gameAfterBotMove.Status == GameStatus.Finished)
-            return false;
-
-        var opponent = botColor == PlayerColor.Red
-            ? PlayerColor.Green
-            : PlayerColor.Red;
-
-    
-        if (gameAfterBotMove.CurrentTurn != opponent)
-            return false;
-
-        
-        if (gameAfterBotMove.CurrentPhase == TurnPhase.BobailMoveRequired)
-        {
-            var bobailMoves = gameAfterBotMove.GetValidBobailMoves();
-
-            foreach (var move in bobailMoves)
-            {
-                var clone = gameAfterBotMove.Clone();
-                clone.ExecuteBobailMove(move);
-
-                if (clone.Status == GameStatus.Finished &&
-                    clone.Winner == opponent)
-                {
-                    return true;
-                }
-            }
-        }
-        else
-        {
-            var pieces = gameAfterBotMove.Board.Pieces
-                .Where(p => !p.IsBobail &&
-                            p.Owner == opponent);
-
-            foreach (var piece in pieces)
-            {
-                var moves = gameAfterBotMove.GetValidPlayerMoves(piece.Position);
-
-                foreach (var move in moves)
-                {
-                    var clone = gameAfterBotMove.Clone();
-                    clone.ExecutePlayerMove(piece.Position, move);
-
-                    if (clone.Status == GameStatus.Finished &&
-                        clone.Winner == opponent)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-
-    private List<BotMove> GenerateAllMoves(Game game)
+    private static List<BotMove> GenerateAllMoves(Game game)
     {
         var moves = new List<BotMove>();
 
         if (game.CurrentPhase == TurnPhase.BobailMoveRequired)
         {
-            foreach (var m in game.GetValidBobailMoves())
-                moves.Add(BotMove.Bobail(m));
+            foreach (var move in game.GetValidBobailMoves())
+                moves.Add(BotMove.Bobail(move));
         }
         else
         {
             var pieces = game.Board.Pieces
-                .Where(p => !p.IsBobail &&
-                            p.Owner == game.CurrentTurn)
-                .ToList();
+                .Where(p => !p.IsBobail && p.Owner == game.CurrentTurn);
 
             foreach (var piece in pieces)
             {
                 var validMoves = game.GetValidPlayerMoves(piece.Position);
 
-                foreach (var m in validMoves)
-                    moves.Add(BotMove.Piece(piece.Position, m));
+                foreach (var move in validMoves)
+                    moves.Add(BotMove.Piece(piece.Position, move));
             }
         }
 
         return moves;
     }
 
-
-    private void ApplyMove(Game clone, BotMove move)
+    private static void ApplyMove(Game clone, BotMove move)
     {
         if (move.IsBobailMove)
             clone.ExecuteBobailMove(move.To);
@@ -143,51 +224,60 @@ public class MediumBotStrategy : IBotStrategy
             clone.ExecutePlayerMove(move.From, move.To);
     }
 
-    private bool CanWinNextTurn(Game gameAfterMove, PlayerColor botColor)
+    private static (BotMove move, int score) ChooseMediumMove(IReadOnlyList<(BotMove move, int score)> candidateMoves)
     {
-        if (gameAfterMove.Status == GameStatus.Finished)
-            return false;
+        if (candidateMoves.Count == 1)
+            return candidateMoves[0];
 
-        if (gameAfterMove.CurrentTurn != botColor)
-            return false;
+        if (Random.Shared.NextDouble() >= ImperfectChoiceChance)
+            return candidateMoves[0];
 
-        if (gameAfterMove.CurrentPhase == TurnPhase.BobailMoveRequired)
-        {
-            var bobailMoves = gameAfterMove.GetValidBobailMoves();
+        var alternativeMoves = candidateMoves.Skip(1).ToList();
 
-            foreach (var move in bobailMoves)
+        if (alternativeMoves.Count == 0)
+            return candidateMoves[0];
+
+        int bestScore = candidateMoves[0].score;
+        var weightedAlternatives = alternativeMoves
+            .Select(candidate =>
             {
-                var clone = gameAfterMove.Clone();
-                clone.ExecuteBobailMove(move);
+                int distanceFromBest = Math.Max(1, bestScore - candidate.score);
+                double weight = 1.0 / distanceFromBest;
+                return (candidate.move, candidate.score, weight);
+            })
+            .ToList();
 
-                if (clone.Status == GameStatus.Finished &&
-                    clone.Winner == botColor)
-                    return true;
-            }
-        }
-        else
+        double totalWeight = weightedAlternatives.Sum(x => x.weight);
+        double roll = Random.Shared.NextDouble() * totalWeight;
+
+        foreach (var candidate in weightedAlternatives)
         {
-            var pieces = gameAfterMove.Board.Pieces
-                .Where(p => !p.IsBobail &&
-                            p.Owner == botColor);
+            roll -= candidate.weight;
 
-            foreach (var piece in pieces)
-            {
-                var moves = gameAfterMove.GetValidPlayerMoves(piece.Position);
-
-                foreach (var move in moves)
-                {
-                    var clone = gameAfterMove.Clone();
-                    clone.ExecutePlayerMove(piece.Position, move);
-
-                    if (clone.Status == GameStatus.Finished &&
-                        clone.Winner == botColor)
-                        return true;
-                }
-            }
+            if (roll <= 0)
+                return (candidate.move, candidate.score);
         }
 
-        return false;
+        var fallback = weightedAlternatives[^1];
+        return (fallback.move, fallback.score);
     }
 
+    private static string BuildStateKey(Game game)
+    {
+        var pieces = game.Board.Pieces
+            .OrderBy(p => p.IsBobail ? 0 : 1)
+            .ThenBy(p => p.IsBobail ? -1 : (int)(p.Owner ?? throw new InvalidOperationException("Non-Bobail piece must have an owner.")))
+            .ThenBy(p => p.Position.Row)
+            .ThenBy(p => p.Position.Column)
+            .Select(p =>
+            {
+                string owner = p.IsBobail
+                    ? "B"
+                    : ((int)(p.Owner ?? throw new InvalidOperationException("Non-Bobail piece must have an owner."))).ToString();
+                return $"{owner}:{p.Position.Row},{p.Position.Column}";
+            });
+
+        return string.Join("|", pieces) +
+               $"|T:{(int)game.CurrentTurn}|P:{(int)game.CurrentPhase}|S:{(int)game.Status}";
+    }
 }

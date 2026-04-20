@@ -2,24 +2,28 @@ namespace Bobail.Application.Services.Bot;
 
 public class EvaluationWeights
 {
-    public int ProgressWeight { get; set; } = 586;
+    public int ProgressWeight { get; set; } = 520;
 
-    public int EndgamePressureWeight { get; set; } = 1208;
+    public int PathToGoalWeight { get; set; } = 430;
 
-    public int FriendlyAdjacencyWeight { get; set; } = 2;
+    public int ImmediateWinThreatWeight { get; set; } = 12_000;
 
-    public int OpponentAdjacencyPenaltyWeight { get; set; } = 192;
+    public int ImmediateLossThreatWeight { get; set; } = 14_000;
 
-    public int CenterControlWeight { get; set; } = 93;
+    public int BobailMobilityWeight { get; set; } = 120;
 
-    public int ForwardMobilityWeight { get; set; } = 294;
+    public int ForwardMobilityWeight { get; set; } = 220;
 
-    public int CorridorWeight { get; set; } = 253;
+    public int TrapRiskWeight { get; set; } = 360;
 
-    public int ImmediateWinThreatWeight { get; set; } = 15467;
+    public int OpponentPressureWeight { get; set; } = 180;
+
+    public int FriendlySupportWeight { get; set; } = 90;
+
+    public int DestinationQualityWeight { get; set; } = 150;
 
     public override string ToString()
     {
-        return $"Progress={ProgressWeight}, EndgamePressure={EndgamePressureWeight}, FriendlyAdjacency={FriendlyAdjacencyWeight}, OpponentAdjacencyPenalty={OpponentAdjacencyPenaltyWeight}, CenterControl={CenterControlWeight}, ForwardMobility={ForwardMobilityWeight}, Corridor={CorridorWeight}, ImmediateWinThreat={ImmediateWinThreatWeight}";
+        return $"Progress={ProgressWeight}, PathToGoal={PathToGoalWeight}, ImmediateWinThreat={ImmediateWinThreatWeight}, ImmediateLossThreat={ImmediateLossThreatWeight}, BobailMobility={BobailMobilityWeight}, ForwardMobility={ForwardMobilityWeight}, TrapRisk={TrapRiskWeight}, OpponentPressure={OpponentPressureWeight}, FriendlySupport={FriendlySupportWeight}, DestinationQuality={DestinationQualityWeight}";
     }
 }

@@ -2,7 +2,9 @@ namespace Bobail.Training.Simulation;
 
 public sealed class TrainingSettings
 {
-    public int GamesPerGenome { get; init; } = 10;
+    public int EasyGamesPerGenome { get; init; } = 8;
+
+    public int MediumGamesPerGenome { get; init; } = 6;
 
     public int MaxTurnsPerGame { get; init; } = 60;
 

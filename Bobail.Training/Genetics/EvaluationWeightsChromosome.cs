@@ -8,14 +8,16 @@ public sealed class EvaluationWeightsChromosome : ChromosomeBase
     // Each gene maps 1:1 to EvaluationWeights so the optimized genome can be reused directly by the game.
     private static readonly (int Min, int Max)[] GeneRanges =
     {
-        (100, 1_200),
-        (0, 1_500),
+        (0, 1_000),
+        (0, 1_000),
+        (0, 25_000),
+        (0, 25_000),
         (0, 500),
         (0, 500),
-        (0, 250),
-        (0, 300),
-        (0, 400),
-        (1_000, 20_000)
+        (0, 1000),
+        (0, 500),
+        (0, 500),
+        (0, 500)
     };
 
     public EvaluationWeightsChromosome() : base(GeneRanges.Length)
@@ -42,13 +44,15 @@ public sealed class EvaluationWeightsChromosome : ChromosomeBase
         return new EvaluationWeights
         {
             ProgressWeight = (int)genes[0].Value,
-            EndgamePressureWeight = (int)genes[1].Value,
-            FriendlyAdjacencyWeight = (int)genes[2].Value,
-            OpponentAdjacencyPenaltyWeight = (int)genes[3].Value,
-            CenterControlWeight = (int)genes[4].Value,
+            PathToGoalWeight = (int)genes[1].Value,
+            ImmediateWinThreatWeight = (int)genes[2].Value,
+            ImmediateLossThreatWeight = (int)genes[3].Value,
+            BobailMobilityWeight = (int)genes[4].Value,
             ForwardMobilityWeight = (int)genes[5].Value,
-            CorridorWeight = (int)genes[6].Value,
-            ImmediateWinThreatWeight = (int)genes[7].Value
+            TrapRiskWeight = (int)genes[6].Value,
+            OpponentPressureWeight = (int)genes[7].Value,
+            FriendlySupportWeight = (int)genes[8].Value,
+            DestinationQualityWeight = (int)genes[9].Value
         };
     }
 }

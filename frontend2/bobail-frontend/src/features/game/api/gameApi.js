@@ -12,12 +12,23 @@ export const gameApi = {
         return res.json();
     },
 
-    getHistory: async () => {
-        const res = await authFetch(`${API}/history`);
+    getHistory: async (page = 1, pageSize = 50) => {
+        const res = await authFetch(`${API}/history?page=${page}&pageSize=${pageSize}`);
 
         if (!res.ok) {
             const err = await res.text();
             throw new Error(err || "Failed to load history.");
+        }
+
+        return res.json();
+    },
+
+    getUserStats: async () => {
+        const res = await authFetch(`${API}/user-stats`);
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err || "Failed to load stats.");
         }
 
         return res.json();

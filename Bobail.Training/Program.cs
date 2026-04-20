@@ -5,11 +5,12 @@ using GeneticSharp;
 
 var settings = new TrainingSettings
 {
-    GamesPerGenome = 20,
-    MaxTurnsPerGame = 60,
+    EasyGamesPerGenome = 20,
+    MediumGamesPerGenome = 0,
+    MaxTurnsPerGame = 100,
     Generations = 50,
     PopulationMinSize = 40,
-    PopulationMaxSize = 80
+    PopulationMaxSize = 60
 };
 
 var fitnessEvaluator = new WeightsFitnessEvaluator(settings);
@@ -24,7 +25,7 @@ var ga = new GeneticAlgorithm(
     new UniformCrossover(),
     new UniformMutation(true));
 
-ga.MutationProbability = 0.15f;
+ga.MutationProbability = 0.1f;
 
 ga.Termination = new GenerationNumberTermination(settings.Generations);
 ga.GenerationRan += (_, _) =>

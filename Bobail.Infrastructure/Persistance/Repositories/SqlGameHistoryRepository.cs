@@ -1,6 +1,7 @@
 using Bobail.Application.DTOs;
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Infrastructure.Persistence;
+using Bobail.Infrastructure.Persistance.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bobail.Infrastructure.Persistance.Repositories;
@@ -18,8 +19,9 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
         _gameStateRepository = gameStateRepository;
     }
 
-    public async Task<List<GameHistoryResponse>> GetHistoryForUserAsync(
+    public async Task<PagedGameHistoryResponse> GetHistoryForUserAsync(
         Guid userId,
+        GameHistoryQuery query,
         CancellationToken cancellationToken = default)
     {
         var playerEntries = await _context.GamePlayers
@@ -32,15 +34,39 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
             .ToList();
 
         if (gameIds.Count == 0)
-            return new List<GameHistoryResponse>();
+        {
+            return new PagedGameHistoryResponse
+            {
+                Page = query.Page,
+                PageSize = query.PageSize,
+                TotalCount = 0,
+                TotalPages = 0,
+                HasPreviousPage = query.Page > 1,
+                HasNextPage = false,
+                Items = new List<GameHistoryResponse>()
+            };
+        }
 
-        var games = await _context.Games
+        var gamesQuery = _context.Games
             .Where(x => gameIds.Contains(x.Id) && x.Status == (int)Domain.Games.GameStatus.Finished)
-            .OrderByDescending(x => x.UpdatedAt)
+            .OrderByDescending(x => x.UpdatedAt);
+
+        var totalCount = await gamesQuery.CountAsync(cancellationToken);
+        var totalPages = totalCount == 0
+            ? 0
+            : (int)Math.Ceiling(totalCount / (double)query.PageSize);
+        var currentPage = totalPages == 0
+            ? 1
+            : Math.Min(query.Page, totalPages);
+        var skip = (currentPage - 1) * query.PageSize;
+
+        var games = await gamesQuery
+            .Skip(skip)
+            .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
         var participants = await _context.GamePlayers
-            .Where(x => gameIds.Contains(x.GameId))
+            .Where(x => games.Select(g => g.Id).Contains(x.GameId))
             .ToListAsync(cancellationToken);
 
         var userIds = participants
@@ -53,7 +79,7 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
             .Where(x => userIds.Contains(x.Id))
             .ToDictionaryAsync(x => x.Id, x => x.Nickname, cancellationToken);
 
-        return games.Select(game =>
+        var items = games.Select(game =>
         {
             var gameParticipants = participants
                 .Where(x => x.GameId == game.Id)
@@ -78,6 +104,67 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
                 BotDifficulty = botDifficulty
             };
         }).ToList();
+
+        return new PagedGameHistoryResponse
+        {
+            Page = currentPage,
+            PageSize = query.PageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages,
+            HasPreviousPage = currentPage > 1,
+            HasNextPage = currentPage < totalPages,
+            Items = items
+        };
+    }
+
+    public async Task<UserGameStatsResponse?> GetUserStatsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+
+        if (user is null)
+            return null;
+
+        var participantEntries = await _context.GamePlayers
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        if (participantEntries.Count == 0)
+        {
+            return new UserGameStatsResponse
+            {
+                MemberSince = user.CreatedAt
+            };
+        }
+
+        var participantByGameId = participantEntries
+            .GroupBy(x => x.GameId)
+            .ToDictionary(x => x.Key, x => x.First());
+
+        var gameIds = participantByGameId.Keys.ToList();
+
+        var finishedGames = await _context.Games
+            .AsNoTracking()
+            .Where(x =>
+                gameIds.Contains(x.Id) &&
+                x.Status == (int)Domain.Games.GameStatus.Finished)
+            .ToListAsync(cancellationToken);
+
+        return new UserGameStatsResponse
+        {
+            MemberSince = user.CreatedAt,
+            TotalGamesPlayed = finishedGames.Count,
+            TotalWins = finishedGames.Count(x => x.WinnerUserId == userId),
+            TotalLosses = finishedGames.Count(x => x.WinnerUserId != userId),
+            WinsWithGreen = CountByColorAndResult(finishedGames, participantByGameId, userId, Domain.Games.PlayerColor.Green, true),
+            WinsWithRed = CountByColorAndResult(finishedGames, participantByGameId, userId, Domain.Games.PlayerColor.Red, true),
+            LossesWithGreen = CountByColorAndResult(finishedGames, participantByGameId, userId, Domain.Games.PlayerColor.Green, false),
+            LossesWithRed = CountByColorAndResult(finishedGames, participantByGameId, userId, Domain.Games.PlayerColor.Red, false)
+        };
     }
 
     public async Task<GameReplayResponse?> GetReplayAsync(
@@ -177,5 +264,26 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
             return $"BOT {botDifficulty}";
 
         return opponentName;
+    }
+
+    private static int CountByColorAndResult(
+        IEnumerable<GameEntity> games,
+        IReadOnlyDictionary<Guid, GamePlayerEntity> participantByGameId,
+        Guid userId,
+        Domain.Games.PlayerColor color,
+        bool isWin)
+    {
+        return games.Count(game =>
+        {
+            if (!participantByGameId.TryGetValue(game.Id, out var participant))
+                return false;
+
+            var hasColor = participant.Color == (int)color;
+            var hasResult = isWin
+                ? game.WinnerUserId == userId
+                : game.WinnerUserId != userId;
+
+            return hasColor && hasResult;
+        });
     }
 }

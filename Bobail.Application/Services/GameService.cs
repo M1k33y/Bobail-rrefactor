@@ -220,11 +220,24 @@ public class GameService : IGameService
             .ToList();
     }
 
-    public Task<List<GameHistoryResponse>> GetHistoryForUserAsync(
+    public Task<PagedGameHistoryResponse> GetHistoryForUserAsync(
+        Guid userId,
+        GameHistoryQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        return _gameHistoryRepository.GetHistoryForUserAsync(userId, query, cancellationToken);
+    }
+
+    public async Task<UserGameStatsResponse> GetUserStatsAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        return _gameHistoryRepository.GetHistoryForUserAsync(userId, cancellationToken);
+        var stats = await _gameHistoryRepository.GetUserStatsAsync(userId, cancellationToken);
+
+        if (stats is null)
+            throw new DomainException("User statistics not found.");
+
+        return stats;
     }
 
     public async Task<GameReplayResponse> GetReplayAsync(
