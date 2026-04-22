@@ -28,32 +28,18 @@
 ---
 
 ## Player Stats & Rating System
+* [ ] Time Clock per game
+* [ ] +10 for win -10 for Loss or Chess elo formula
 
 ---
 
 ## GameStats
+* [x] Number of games
+* [x] Loses/Wins
+* [x] Loses/Wins per color
 
 ### Objective
 
-Să avem statistici agregate pentru fiecare utilizator, ușor de accesat și afișat.
-
-### Fields:
-
-* TotalGamesPlayed
-* TotalWins
-* TotalLosses
-* MemberSince (data creării contului)
-* CurrentRating
-
-### Notes:
-
-* `CurrentRating` este sursa principală pentru:
-
-  * leaderboard
-  * matchmaking (în viitor)
-  * afișare profil
-
----
 
 ## RatingHistory
 
