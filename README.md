@@ -7,13 +7,13 @@
 ### High priority
 
 
-* [x] Adaugă Transposition Table
-* [ ] Time-based search (iterative deepening)
+* [x] Adauga Transposition Table
+
 
 ### Medium
 
 * [x] Move ordering
-* [ ] Caching simplu pe funcții
+* [x] Caching simplu pe funcții
 
 ---
 
