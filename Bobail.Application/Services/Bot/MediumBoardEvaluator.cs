@@ -31,7 +31,10 @@ public class MediumBoardEvaluator : IBoardEvaluator
             TrapRiskWeight = Scale(baseWeights.TrapRiskWeight, 0.60),
             OpponentPressureWeight = Scale(baseWeights.OpponentPressureWeight, 0.65),
             FriendlySupportWeight = Scale(baseWeights.FriendlySupportWeight, 0.75),
-            DestinationQualityWeight = Scale(baseWeights.DestinationQualityWeight, 0.60)
+            DestinationQualityWeight = Scale(baseWeights.DestinationQualityWeight, 0.60),
+            CenterControlWeight = Scale(baseWeights.CenterControlWeight, 0.70),
+            BehindBobailFormationWeight = Scale(baseWeights.BehindBobailFormationWeight, 0.70),
+            TokenDevelopmentWeight = Scale(baseWeights.TokenDevelopmentWeight, 0.65)
         };
     }
 

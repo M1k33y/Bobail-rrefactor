@@ -54,7 +54,6 @@ graphGenerator.SaveWinrateComparison(
     Path.Combine(outputDirectory, "winrate.png"),
     summaries);
 
-Console.WriteLine("Artifacts generated:");
 Console.WriteLine($"- {Path.Combine(outputDirectory, "game-results.csv")}");
 Console.WriteLine($"- {Path.Combine(outputDirectory, "matchup-summary.csv")}");
 Console.WriteLine($"- {Path.Combine(outputDirectory, "distribution.png")}");

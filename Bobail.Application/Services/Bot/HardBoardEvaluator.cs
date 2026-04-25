@@ -56,6 +56,15 @@ public class HardBoardEvaluator : IBoardEvaluator
         score += EvaluateOpponentPressure(game, botColor);
         score -= EvaluateOpponentPressure(game, opponent);
 
+        score += EvaluateCenterControl(game, botColor);
+        score -= EvaluateCenterControl(game, opponent);
+
+        score += EvaluateBehindBobailFormation(game, botColor);
+        score -= EvaluateBehindBobailFormation(game, opponent);
+
+        score += EvaluateTokenDevelopment(game, botColor);
+        score -= EvaluateTokenDevelopment(game, opponent);
+
         score += EvaluateImmediateWinThreat(game, botColor);
         score += EvaluateImmediateLossThreat(game, botColor);
         score += EvaluateBobailMobility(game, botColor);
@@ -70,6 +79,76 @@ public class HardBoardEvaluator : IBoardEvaluator
         => color == PlayerColor.Red
             ? PlayerColor.Green
             : PlayerColor.Red;
+
+    private int EvaluateCenterControl(Game game, PlayerColor color)
+    {
+        int control = 0;
+
+        foreach (var piece in GetOwnedPlayerPieces(game, color))
+        {
+            if (piece.Position.Row == 2 && piece.Position.Column == 2)
+            {
+                control += 4;
+                continue;
+            }
+
+            int distanceFromCenter = Math.Abs(piece.Position.Row - 2) + Math.Abs(piece.Position.Column - 2);
+
+            control += distanceFromCenter switch
+            {
+                1 => 2,
+                2 => 1,
+                _ => 0
+            };
+        }
+
+        return control * _weights.CenterControlWeight;
+    }
+
+    private int EvaluateBehindBobailFormation(Game game, PlayerColor color)
+    {
+        var bobail = GetBobail(game);
+        int score = 0;
+
+        foreach (var piece in GetOwnedPlayerPieces(game, color))
+        {
+            int behindDistance = GetBehindBobailDistance(piece.Position.Row, bobail.Position.Row, color);
+
+            if (behindDistance <= 0)
+                continue;
+
+            int columnDistance = Math.Abs(piece.Position.Column - bobail.Position.Column);
+            int alignmentBonus = columnDistance switch
+            {
+                0 => 3,
+                1 => 2,
+                2 => 1,
+                _ => 0
+            };
+
+            score += alignmentBonus + Math.Max(0, 3 - behindDistance);
+        }
+
+        return score * _weights.BehindBobailFormationWeight;
+    }
+
+    private int EvaluateTokenDevelopment(Game game, PlayerColor color)
+    {
+        int score = 0;
+
+        foreach (var piece in GetOwnedPlayerPieces(game, color))
+        {
+            int distanceFromStartRow = color == PlayerColor.Red
+                ? piece.Position.Row
+                : BoardSize - 1 - piece.Position.Row;
+            int centerColumnBonus = 2 - Math.Abs(piece.Position.Column - 2);
+            int mobility = CountAvailablePlayerSlidesFrom(game, piece.Position);
+
+            score += (distanceFromStartRow * 2) + Math.Max(0, centerColumnBonus) + Math.Min(3, mobility);
+        }
+
+        return score * _weights.TokenDevelopmentWeight;
+    }
 
     private int EvaluateProgress(Game game, PlayerColor color)
     {
@@ -275,6 +354,12 @@ public class HardBoardEvaluator : IBoardEvaluator
         return game.Board.Pieces.First(p => p.IsBobail);
     }
 
+    private static IEnumerable<Piece> GetOwnedPlayerPieces(Game game, PlayerColor color)
+    {
+        return game.Board.Pieces
+            .Where(piece => !piece.IsBobail && piece.Owner == color);
+    }
+
     private static int DistanceToTarget(Game game, PlayerColor color)
     {
         return DistanceToTarget(GetBobail(game).Position.Row, color);
@@ -284,6 +369,13 @@ public class HardBoardEvaluator : IBoardEvaluator
     {
         int targetRow = color == PlayerColor.Red ? 0 : 4;
         return Math.Abs(row - targetRow);
+    }
+
+    private static int GetBehindBobailDistance(int pieceRow, int bobailRow, PlayerColor color)
+    {
+        return color == PlayerColor.Red
+            ? pieceRow - bobailRow
+            : bobailRow - pieceRow;
     }
 
     private int? FindShortestPathToTarget(Game game, Position start, PlayerColor color)
@@ -347,6 +439,46 @@ public class HardBoardEvaluator : IBoardEvaluator
         }
 
         return count;
+    }
+
+    private int CountAvailablePlayerSlidesFrom(Game game, Position from)
+    {
+        int count = 0;
+
+        foreach (var direction in AllDirections)
+        {
+            var destination = GetFarthestEmptyPosition(game, from, direction);
+
+            if (!destination.Equals(from))
+                count++;
+        }
+
+        return count;
+    }
+
+    private static Position GetFarthestEmptyPosition(Game game, Position from, Direction direction)
+    {
+        int row = from.Row;
+        int column = from.Column;
+
+        while (true)
+        {
+            int nextRow = row + direction.DeltaRow;
+            int nextColumn = column + direction.DeltaColumn;
+
+            if (nextRow < 0 || nextRow >= BoardSize || nextColumn < 0 || nextColumn >= BoardSize)
+                break;
+
+            var next = new Position(nextRow, nextColumn);
+
+            if (!game.Board.IsEmpty(next))
+                break;
+
+            row = nextRow;
+            column = nextColumn;
+        }
+
+        return new Position(row, column);
     }
 
     private static bool IsEdge(Position position)

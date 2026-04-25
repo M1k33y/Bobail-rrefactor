@@ -17,9 +17,9 @@ public sealed class SimulationRunner
 
     public IReadOnlyList<MatchGameResult> RunMatchup(MatchupDefinition matchup, int gamesToPlay)
     {
-        var results = new List<MatchGameResult>(gamesToPlay);
+        var results = new MatchGameResult[gamesToPlay];
 
-        for (int gameIndex = 0; gameIndex < gamesToPlay; gameIndex++)
+        Parallel.For(0, gamesToPlay, gameIndex =>
         {
             bool botAStarts = gameIndex % 2 == 0;
 
@@ -29,15 +29,15 @@ public sealed class SimulationRunner
             var redBot = _botFactory.Create(redDifficulty);
             var greenBot = _botFactory.Create(greenDifficulty);
 
-            results.Add(PlaySingleGame(
+            results[gameIndex] = PlaySingleGame(
                 matchup.BotAName,
                 matchup.BotBName,
                 botAStarts ? matchup.BotAName : matchup.BotBName,
                 redBot,
                 greenBot,
                 redDifficulty,
-                greenDifficulty));
-        }
+                greenDifficulty);
+        });
 
         return results;
     }
