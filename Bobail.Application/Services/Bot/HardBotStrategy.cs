@@ -22,7 +22,7 @@ public class HardBotStrategy : IBotStrategy
     private const int MaxDepth = 3;
     private const int CandidatePoolSize = 3;
     private const int ScoreWindow = 250;
-    private const double NearBestRandomizerChance = 0.05;
+    private const double NearBestRandomizerChance = 0.15;
     private const int ImmediateThreatPenalty = 250_000;
     private const int ForcedWinBonus = 180_000;
     private const int BackwardBobailPenalty = 1_400;
@@ -57,7 +57,6 @@ public class HardBotStrategy : IBotStrategy
             int score = Minimax(
                 data.clone,
                 MaxDepth - 1,
-                maximizingPlayer: false,
                 alpha: int.MinValue,
                 beta: int.MaxValue,
                 botColor: game.CurrentTurn);
@@ -87,13 +86,14 @@ public class HardBotStrategy : IBotStrategy
     private int Minimax(
         Game game,
         int depth,
-        bool maximizingPlayer,
         int alpha,
         int beta,
         PlayerColor botColor)
     {
         if (depth == 0 || game.Status == GameStatus.Finished)
             return _evaluator.Evaluate(game, botColor);
+
+        bool maximizingPlayer = game.CurrentTurn == botColor;
 
         var cacheKey = new SearchCacheKey(
             BuildStateKey(game),
@@ -126,7 +126,6 @@ public class HardBotStrategy : IBotStrategy
                 int eval = Minimax(
                     data.clone,
                     depth - 1,
-                    maximizingPlayer: false,
                     alpha,
                     beta,
                     botColor);
@@ -149,7 +148,6 @@ public class HardBotStrategy : IBotStrategy
             int eval = Minimax(
                 data.clone,
                 depth - 1,
-                maximizingPlayer: true,
                 alpha,
                 beta,
                 botColor);

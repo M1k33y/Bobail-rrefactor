@@ -55,7 +55,6 @@ public class MediumBotStrategy : IBotStrategy
             int score = Minimax(
                 data.clone,
                 MaxDepth - 1,
-                maximizingPlayer: false,
                 alpha: int.MinValue,
                 beta: int.MaxValue,
                 botColor: game.CurrentTurn);
@@ -85,13 +84,14 @@ public class MediumBotStrategy : IBotStrategy
     private int Minimax(
         Game game,
         int depth,
-        bool maximizingPlayer,
         int alpha,
         int beta,
         PlayerColor botColor)
     {
         if (depth == 0 || game.Status == GameStatus.Finished)
             return _evaluator.Evaluate(game, botColor);
+
+        bool maximizingPlayer = game.CurrentTurn == botColor;
 
         var cacheKey = new SearchCacheKey(
             BuildStateKey(game),
@@ -124,7 +124,6 @@ public class MediumBotStrategy : IBotStrategy
                 int eval = Minimax(
                     data.clone,
                     depth - 1,
-                    maximizingPlayer: false,
                     alpha,
                     beta,
                     botColor);
@@ -147,7 +146,6 @@ public class MediumBotStrategy : IBotStrategy
             int eval = Minimax(
                 data.clone,
                 depth - 1,
-                maximizingPlayer: true,
                 alpha,
                 beta,
                 botColor);
