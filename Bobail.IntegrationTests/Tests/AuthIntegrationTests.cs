@@ -115,7 +115,7 @@ namespace Bobail.IntegrationTests
             var error = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-            Assert.Contains("deactivated", error, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("currently banned", error, StringComparison.OrdinalIgnoreCase);
         }
 
        

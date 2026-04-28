@@ -1,10 +1,12 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
-import { Play, BookOpen, History, ChartColumnIncreasing } from "lucide-react";
+import { Play, BookOpen, History, ChartColumnIncreasing, ShieldCheck } from "lucide-react";
 import { Settings } from "lucide-react";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import "../styles/Sidebar.css";
 function Sidebar() {
     const [playOpen, setPlayOpen] = useState(false);
+    const { isAdmin } = useAuth();
 
     return (
         <div className="sidebar">
@@ -57,6 +59,13 @@ function Sidebar() {
                 <Settings size={18} />
                 <span>Settings</span>
             </NavLink>
+
+            {isAdmin && (
+                <NavLink to="/admin/users" className="menu-item single">
+                    <ShieldCheck size={18} />
+                    <span>Admin Panel</span>
+                </NavLink>
+            )}
         </div>
     );
 }

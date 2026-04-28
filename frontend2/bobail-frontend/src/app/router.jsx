@@ -16,6 +16,7 @@ import ProtectedRoute from "../routes/ProtectedRoute.jsx";
 import GameHistoryPage from "../features/gameHistory/pages/GameHistoryPage";
 import GameReviewPage from "../features/gameHistory/pages/GameReviewPage";
 import GameStatsPage from "../features/gameStats/pages/GameStatsPage";
+import AdminUsersPage from "../features/admin/pages/AdminUsersPage";
 
 export const router = createBrowserRouter([
   {
@@ -77,6 +78,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <GameReviewPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/admin/users",
+        element: (
+          <ProtectedRoute requiredRole="Admin">
+            <AdminUsersPage />
           </ProtectedRoute>
         ),
       },
