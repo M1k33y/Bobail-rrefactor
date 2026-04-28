@@ -1,15 +1,17 @@
+using Bobail.Application.Interfaces.Services;
 using Bobail.Application.Services.Bot;
 using Bobail.Domain.Games;
 using Bobail.Infrastructure.Bots;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Bobail.Training.Simulation;
 
 public sealed class WeightsFitnessEvaluator
 {
-    
-    private readonly GameSimulator _simulator = new();
     private readonly TrainingSettings _settings;
+    private readonly EvaluationWeights _baselineWeights = new();
 
     public WeightsFitnessEvaluator(TrainingSettings settings)
     {
@@ -20,22 +22,51 @@ public sealed class WeightsFitnessEvaluator
     {
         double totalFitness = 0;
 
-        for (int gameIndex = 0; gameIndex < _settings.GamesPerGenome; gameIndex++)
-        {
-            // Alternate the candidate's color so the first-move advantage stays balanced
-            bool candidateStarts = gameIndex % 2 == 0;
-            var candidateBot = CreateHardBot(weights);
-            var baselineBot = new EasyBotStrategy();
+        totalFitness += EvaluateMatchup(
+            weights,
+            _settings.EasyGamesPerGenome,
+            () => new EasyBotStrategy(),
+            difficultyMultiplier: 1.0);
 
-            var result = candidateStarts
-                ? _simulator.PlayGame(candidateBot, baselineBot, _settings.MaxTurnsPerGame)
-                : _simulator.PlayGame(baselineBot, candidateBot, _settings.MaxTurnsPerGame);
-
-            var candidateColor = candidateStarts ? PlayerColor.Red : PlayerColor.Green;
-            totalFitness += ScoreResult(result, candidateColor);
-        }
+        totalFitness += EvaluateMatchup(
+            weights,
+            _settings.MediumGamesPerGenome,
+            CreateBaselineMediumBot,
+            difficultyMultiplier: 1.3);
 
         return totalFitness;
+    }
+
+    private double EvaluateMatchup(
+        EvaluationWeights weights,
+        int gamesPerGenome,
+        Func<IBotStrategy> baselineFactory,
+        double difficultyMultiplier)
+    {
+        double fitness = 0;
+
+        Parallel.For(
+            fromInclusive: 0,
+            toExclusive: gamesPerGenome,
+            localInit: static () => new ThreadLocalSimulationState(new GameSimulator()),
+            body: (gameIndex, _, localState) =>
+            {
+                bool candidateStarts = gameIndex % 2 == 0;
+                var candidateBot = CreateHardBot(weights);
+                var baselineBot = baselineFactory();
+
+                var result = candidateStarts
+                    ? localState.Simulator.PlayGame(candidateBot, baselineBot, _settings.MaxTurnsPerGame)
+                    : localState.Simulator.PlayGame(baselineBot, candidateBot, _settings.MaxTurnsPerGame);
+
+                var candidateColor = candidateStarts ? PlayerColor.Red : PlayerColor.Green;
+                localState.Fitness += ScoreResult(result, candidateColor, difficultyMultiplier);
+
+                return localState;
+            },
+            localFinally: localState => AddThreadLocalFitness(ref fitness, localState.Fitness));
+
+        return fitness;
     }
 
     private static HardBotStrategy CreateHardBot(EvaluationWeights weights)
@@ -44,14 +75,42 @@ public sealed class WeightsFitnessEvaluator
         return new HardBotStrategy(evaluator, NullLogger<HardBotStrategy>.Instance);
     }
 
-    private static double ScoreResult(GameResult result, PlayerColor candidateColor)
+    private IBotStrategy CreateBaselineMediumBot()
     {
-        int turns = result.Turns;
+        var evaluator = new MediumBoardEvaluator(_baselineWeights);
+        return new MediumBotStrategy(evaluator, NullLogger<MediumBotStrategy>.Instance);
+    }
 
-        // f2(x) = 1/x
+    private static double ScoreResult(GameResult result, PlayerColor candidateColor, double difficultyMultiplier)
+    {
+        int turns = Math.Max(1, result.Turns);
+
         if (result.Winner == candidateColor)
-            return 1000.0 / turns;
+            return difficultyMultiplier * (1000.0 / turns);
 
-        return -1000.0 / turns;
+        if (result.Winner is null)
+            return 0;
+
+        return -difficultyMultiplier * (1000.0 / turns);
+    }
+
+    private static void AddThreadLocalFitness(ref double totalFitness, double localFitness)
+    {
+        double currentTotal;
+        double updatedTotal;
+
+        do
+        {
+            currentTotal = totalFitness;
+            updatedTotal = currentTotal + localFitness;
+        }
+        while (Interlocked.CompareExchange(ref totalFitness, updatedTotal, currentTotal) != currentTotal);
+    }
+
+    private sealed class ThreadLocalSimulationState(GameSimulator simulator)
+    {
+        public GameSimulator Simulator { get; } = simulator;
+
+        public double Fitness { get; set; }
     }
 }

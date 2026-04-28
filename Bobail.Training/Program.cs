@@ -5,11 +5,21 @@ using GeneticSharp;
 
 var settings = new TrainingSettings
 {
-    GamesPerGenome = 20,
-    MaxTurnsPerGame = 60,
-    Generations = 50,
-    PopulationMinSize = 40,
-    PopulationMaxSize = 80
+    EasyGamesPerGenome = 20,
+    MediumGamesPerGenome = 10,
+    MaxTurnsPerGame = 90,
+    Generations = 60,
+    PopulationMinSize = 30,
+    PopulationMaxSize = 40
+
+
+
+    //EasyGamesPerGenome = 20,
+    //MediumGamesPerGenome = 80,
+    //MaxTurnsPerGame = 100,
+    //Generations = 100,
+    //PopulationMinSize = 80,
+    //PopulationMaxSize = 120
 };
 
 var fitnessEvaluator = new WeightsFitnessEvaluator(settings);
@@ -20,19 +30,44 @@ var fitness = new EvaluationWeightsFitness(fitnessEvaluator);
 var ga = new GeneticAlgorithm(
     population,
     fitness,
-    new TournamentSelection(2),
+    new NonLinearRankSelection(rankDecay: 0.97),
     new UniformCrossover(),
     new UniformMutation(true));
 
-ga.MutationProbability = 0.15f;
+const float baseMutationProbability = 0.1f;
+const float mediumMutationProbability = 0.18f;
+const float highMutationProbability = 0.3f;
+const double improvementEpsilon = 0.01;
+
+double bestFitnessSoFar = double.MinValue;
+int stagnantGenerations = 0;
+
+ga.MutationProbability = baseMutationProbability;
 
 ga.Termination = new GenerationNumberTermination(settings.Generations);
 ga.GenerationRan += (_, _) =>
 {
     if (ga.BestChromosome is EvaluationWeightsChromosome bestChromosome)
     {
+        if (bestChromosome.Fitness > bestFitnessSoFar + improvementEpsilon)
+        {
+            bestFitnessSoFar = bestChromosome.Fitness.Value;
+            stagnantGenerations = 0;
+        }
+        else
+        {
+            stagnantGenerations++;
+        }
+
+        ga.MutationProbability = stagnantGenerations switch
+        {
+            >= 10 => highMutationProbability,
+            >= 5 => mediumMutationProbability,
+            _ => baseMutationProbability
+        };
+
         Console.WriteLine(
-            $"Generation {ga.GenerationsNumber}: fitness={bestChromosome.Fitness:F2}, weights={bestChromosome.ToWeights()}");
+            $"Generation {ga.GenerationsNumber}: fitness={bestChromosome.Fitness:F2}, stagnant={stagnantGenerations}, mutation={ga.MutationProbability:F2}, weights={bestChromosome.ToWeights()}");
     }
 };
 

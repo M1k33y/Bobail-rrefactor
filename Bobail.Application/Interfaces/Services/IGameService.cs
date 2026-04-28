@@ -43,7 +43,12 @@ public interface IGameService
 
     Task AbandonGameAsync(Guid gameId);
 
-    Task<List<GameHistoryResponse>> GetHistoryForUserAsync(
+    Task<PagedGameHistoryResponse> GetHistoryForUserAsync(
+        Guid userId,
+        GameHistoryQuery query,
+        CancellationToken cancellationToken = default);
+
+    Task<UserGameStatsResponse> GetUserStatsAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
 

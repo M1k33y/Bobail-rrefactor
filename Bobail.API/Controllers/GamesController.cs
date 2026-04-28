@@ -168,11 +168,22 @@ public class GamesController : ControllerBase
 
     [Authorize]
     [HttpGet("history")]
-    public async Task<ActionResult> GetHistory(CancellationToken cancellationToken)
+    public async Task<ActionResult> GetHistory(
+        [FromQuery] GameHistoryQuery query,
+        CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var history = await _gameService.GetHistoryForUserAsync(userId, cancellationToken);
+        var history = await _gameService.GetHistoryForUserAsync(userId, query, cancellationToken);
         return Ok(history);
+    }
+
+    [Authorize]
+    [HttpGet("user-stats")]
+    public async Task<ActionResult> GetUserStats(CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var stats = await _gameService.GetUserStatsAsync(userId, cancellationToken);
+        return Ok(stats);
     }
 
     [Authorize]

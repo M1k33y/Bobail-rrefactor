@@ -99,6 +99,32 @@
   justify-self: end;
 }
 
+.history-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.history-pagination-summary {
+  color: var(--mutedText);
+  font-size: 14px;
+}
+
+.history-pagination-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-pagination-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .history-empty,
 .history-error {
   padding: 32px 20px;
@@ -134,5 +160,10 @@
 
   .history-review-button {
     justify-self: start;
+  }
+
+  .history-pagination {
+    flex-direction: column;
+    align-items: start;
   }
 }

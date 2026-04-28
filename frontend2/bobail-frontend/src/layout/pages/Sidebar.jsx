@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
-import { Play, BookOpen, History } from "lucide-react";
+import { Play, BookOpen, History, ChartColumnIncreasing } from "lucide-react";
 import { Settings } from "lucide-react";
 import "../styles/Sidebar.css";
 function Sidebar() {
@@ -46,6 +46,11 @@ function Sidebar() {
             <NavLink to="/game-history" className="menu-item single">
                 <History size={18} />
                 <span>Game History</span>
+            </NavLink>
+
+            <NavLink to="/game-stats" className="menu-item single">
+                <ChartColumnIncreasing size={18} />
+                <span>GameStats</span>
             </NavLink>
 
             <NavLink to="/settings" className="menu-item single">

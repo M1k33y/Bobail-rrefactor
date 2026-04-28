@@ -15,6 +15,7 @@ import VerifyEmailPage from "../features/auth/pages/VerifyEmailPage";
 import ProtectedRoute from "../routes/ProtectedRoute.jsx";
 import GameHistoryPage from "../features/gameHistory/pages/GameHistoryPage";
 import GameReviewPage from "../features/gameHistory/pages/GameReviewPage";
+import GameStatsPage from "../features/gameStats/pages/GameStatsPage";
 
 export const router = createBrowserRouter([
   {
@@ -60,6 +61,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <GameHistoryPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/game-stats",
+        element: (
+          <ProtectedRoute>
+            <GameStatsPage />
           </ProtectedRoute>
         ),
       },
