@@ -75,9 +75,7 @@ export default function ResetPasswordPage() {
     <div className="login-container">
       <div className="login-card">
         <h2>Choose a New Password</h2>
-        <p className="login-subtitle">
-          Paste the token from your reset link or open this page from the link.
-        </p>
+        
 
         {success ? (
           <>

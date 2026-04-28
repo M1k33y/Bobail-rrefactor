@@ -86,7 +86,7 @@ public class AuthService : IAuthService
             throw new Exception("Invalid credentials");
 
         if (!user.IsActive)
-            throw new Exception("This account has been deactivated. Please contact an administrator.");
+            throw new Exception("This user is currently banned.");
 
         if (!user.IsEmailVerified)
             throw new Exception("Please verify your email before logging in");
@@ -230,8 +230,15 @@ public class AuthService : IAuthService
             Token = new JwtSecurityTokenHandler().WriteToken(token),
             ExpiresAtUtc = expiresAtUtc,
             RememberMe = rememberMe,
-            Nickname = user.Nickname
+            Nickname = user.Nickname,
+            UserId = user.Id,
+            Role = ToRoleName(user.Role)
         };
+    }
+
+    private static string ToRoleName(int role)
+    {
+        return role == 1 ? "Admin" : "User";
     }
 
     private async Task SendVerificationEmailAsync(User user)

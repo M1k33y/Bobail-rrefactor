@@ -8,6 +8,9 @@ const readError = async (res, fallbackMessage) => {
     if (typeof parsed === "string" && parsed) {
       return parsed;
     }
+    if (parsed?.error) {
+      return parsed.error;
+    }
   } catch {
     // plain text deci e ok
   }

@@ -12,6 +12,14 @@ namespace Bobail.Application.Interfaces.Repositories
         Task AddAsync(User user);
         Task<User?> GetByIdAsync(Guid userId);
         Task<User?> GetByEmailAsync(string email);
+        Task<IReadOnlyList<User>> GetUsersAsync(
+            int skip,
+            int take,
+            string? search = null,
+            CancellationToken cancellationToken = default);
+        Task<int> CountUsersAsync(
+            string? search = null,
+            CancellationToken cancellationToken = default);
         Task UpdateAsync(User user);
     }
 }

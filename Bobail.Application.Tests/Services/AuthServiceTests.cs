@@ -99,7 +99,7 @@ namespace Bobail.Application.Tests.Services
             var exception = await Assert.ThrowsAsync<Exception>(() =>
                 service.LoginAsync("test@mail.com", password, false));
 
-            Assert.Equal("This account has been deactivated. Please contact an administrator.", exception.Message);
+            Assert.Equal("This user is currently banned.", exception.Message);
         }
 
         [Fact]
@@ -154,6 +154,8 @@ namespace Bobail.Application.Tests.Services
             Assert.Contains(jwt.Claims, c => c.Type == ClaimTypes.Email && c.Value == user.Email);
             Assert.Contains(jwt.Claims, c => c.Type == ClaimTypes.Role && c.Value == user.Role.ToString());
             Assert.True(response.RememberMe);
+            Assert.Equal(user.Id, response.UserId);
+            Assert.Equal("Admin", response.Role);
         }
 
         [Fact]

@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 
-export default function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+export default function ProtectedRoute({ children, requiredRole }) {
+  const { isAuthenticated, role } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
@@ -13,6 +13,10 @@ export default function ProtectedRoute({ children }) {
         replace
       />
     );
+  }
+
+  if (requiredRole && role !== requiredRole) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
