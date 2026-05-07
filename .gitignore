@@ -5,8 +5,6 @@ obj/
 *.user
 *.suo
 
-# Rider
-.idea/
 
 # Test results
 TestResults/
