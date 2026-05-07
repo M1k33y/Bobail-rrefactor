@@ -8,10 +8,17 @@ namespace Bobail.Infrastructure.Bots;
 public class MediumBotStrategy : IBotStrategy
 {
     private readonly record struct SearchCacheKey(
-        string State,
+        SearchBoardStateKey State,
         int Depth,
         bool MaximizingPlayer,
         PlayerColor BotColor);
+
+    private sealed record RootMoveCandidate(
+        BotMove Move,
+        Game GameAfterMove,
+        int StaticScore,
+        bool IsImmediateWin,
+        bool AllowsImmediateOpponentWin);
 
     private readonly MediumBoardEvaluator _evaluator;
     private readonly ILogger<MediumBotStrategy> _logger;
@@ -19,9 +26,9 @@ public class MediumBotStrategy : IBotStrategy
 
     private const int MaxDepth = 2;
     private const int RootMoveLimit = 5;
-    private const int CandidatePoolSize = 4;
-    private const int ScoreWindow = 1_200;
-    private const double ImperfectChoiceChance = 0.4;
+    private const int CandidatePoolSize = 3;
+    private const double BestMoveChance = 0.75;
+    private const double AlternativeRankDecay = 0.55;
 
     public BotDifficulty Difficulty => BotDifficulty.Medium;
 
@@ -39,33 +46,40 @@ public class MediumBotStrategy : IBotStrategy
 
         _transpositionTable.Clear();
 
-        var moveData = PrepareOrderedMoves(
-            game,
-            botColor: game.CurrentTurn,
-            maximizingPlayer: true,
-            takeLimit: RootMoveLimit);
+        var rootCandidates = PrepareRootMoveCandidates(game, game.CurrentTurn);
 
-        if (moveData.Count == 0)
+        if (rootCandidates.Count == 0)
             throw new InvalidOperationException("Medium bot has no valid moves.");
 
+        var immediateWin = rootCandidates
+            .Where(candidate => candidate.IsImmediateWin)
+            .OrderByDescending(candidate => candidate.StaticScore)
+            .FirstOrDefault();
+
+        if (immediateWin is not null)
+        {
+            _logger.LogInformation("Medium AI selected immediate winning move.");
+            return immediateWin.Move;
+        }
+
+        var moveData = SelectRootMoveCandidates(rootCandidates);
         var scoredMoves = new List<(BotMove move, int score)>(moveData.Count);
 
         foreach (var data in moveData)
         {
             int score = Minimax(
-                data.clone,
+                data.GameAfterMove,
                 MaxDepth - 1,
                 alpha: int.MinValue,
                 beta: int.MaxValue,
                 botColor: game.CurrentTurn);
 
-            scoredMoves.Add((data.move, score));
+            scoredMoves.Add((data.Move, score));
         }
 
         int bestScore = scoredMoves.Max(x => x.score);
 
         var candidateMoves = scoredMoves
-            .Where(x => bestScore - x.score <= ScoreWindow)
             .OrderByDescending(x => x.score)
             .Take(CandidatePoolSize)
             .ToList();
@@ -81,6 +95,49 @@ public class MediumBotStrategy : IBotStrategy
         return selectedMove.move;
     }
 
+    private List<RootMoveCandidate> PrepareRootMoveCandidates(Game game, PlayerColor botColor)
+    {
+        var rootMoveData = PrepareOrderedMoves(
+            game,
+            botColor,
+            maximizingPlayer: true,
+            takeLimit: null);
+
+        var candidates = new List<RootMoveCandidate>(rootMoveData.Count);
+
+        foreach (var data in rootMoveData)
+        {
+            bool isImmediateWin = data.clone.Status == GameStatus.Finished &&
+                                  data.clone.Winner == botColor;
+            bool allowsImmediateOpponentWin = AllowsImmediateOpponentWin(data.clone, botColor);
+
+            candidates.Add(new RootMoveCandidate(
+                data.move,
+                data.clone,
+                data.score,
+                isImmediateWin,
+                allowsImmediateOpponentWin));
+        }
+
+        return candidates;
+    }
+
+    private static List<RootMoveCandidate> SelectRootMoveCandidates(IReadOnlyList<RootMoveCandidate> candidates)
+    {
+        var safeCandidates = candidates
+            .Where(candidate => !candidate.AllowsImmediateOpponentWin)
+            .ToList();
+
+        var eligibleCandidates = safeCandidates.Count > 0
+            ? safeCandidates
+            : candidates;
+
+        return eligibleCandidates
+            .OrderByDescending(candidate => candidate.StaticScore)
+            .Take(RootMoveLimit)
+            .ToList();
+    }
+
     private int Minimax(
         Game game,
         int depth,
@@ -94,7 +151,7 @@ public class MediumBotStrategy : IBotStrategy
         bool maximizingPlayer = game.CurrentTurn == botColor;
 
         var cacheKey = new SearchCacheKey(
-            BuildStateKey(game),
+            SearchBoardStateKeyBuilder.FromGame(game),
             depth,
             maximizingPlayer,
             botColor);
@@ -227,7 +284,7 @@ public class MediumBotStrategy : IBotStrategy
         if (candidateMoves.Count == 1)
             return candidateMoves[0];
 
-        if (Random.Shared.NextDouble() >= ImperfectChoiceChance)
+        if (Random.Shared.NextDouble() < BestMoveChance)
             return candidateMoves[0];
 
         var alternativeMoves = candidateMoves.Skip(1).ToList();
@@ -235,12 +292,10 @@ public class MediumBotStrategy : IBotStrategy
         if (alternativeMoves.Count == 0)
             return candidateMoves[0];
 
-        int bestScore = candidateMoves[0].score;
         var weightedAlternatives = alternativeMoves
-            .Select(candidate =>
+            .Select((candidate, index) =>
             {
-                int distanceFromBest = Math.Max(1, bestScore - candidate.score);
-                double weight = 1.0 / distanceFromBest;
+                double weight = Math.Pow(AlternativeRankDecay, index);
                 return (candidate.move, candidate.score, weight);
             })
             .ToList();
@@ -260,22 +315,39 @@ public class MediumBotStrategy : IBotStrategy
         return (fallback.move, fallback.score);
     }
 
-    private static string BuildStateKey(Game game)
+    private static bool AllowsImmediateOpponentWin(Game gameAfterMove, PlayerColor botColor)
     {
-        var pieces = game.Board.Pieces
-            .OrderBy(p => p.IsBobail ? 0 : 1)
-            .ThenBy(p => p.IsBobail ? -1 : (int)(p.Owner ?? throw new InvalidOperationException("Non-Bobail piece must have an owner.")))
-            .ThenBy(p => p.Position.Row)
-            .ThenBy(p => p.Position.Column)
-            .Select(p =>
-            {
-                string owner = p.IsBobail
-                    ? "B"
-                    : ((int)(p.Owner ?? throw new InvalidOperationException("Non-Bobail piece must have an owner."))).ToString();
-                return $"{owner}:{p.Position.Row},{p.Position.Column}";
-            });
+        if (gameAfterMove.Status == GameStatus.Finished)
+            return false;
 
-        return string.Join("|", pieces) +
-               $"|T:{(int)game.CurrentTurn}|P:{(int)game.CurrentPhase}|S:{(int)game.Status}";
+        var opponent = Opponent(botColor);
+
+        if (gameAfterMove.CurrentTurn != opponent)
+            return false;
+
+        foreach (var move in GenerateAllMovesForColor(gameAfterMove, opponent))
+        {
+            var clone = gameAfterMove.Clone();
+            ApplyMove(clone, move);
+
+            if (clone.Status == GameStatus.Finished && clone.Winner == opponent)
+                return true;
+        }
+
+        return false;
     }
+
+    private static List<BotMove> GenerateAllMovesForColor(Game game, PlayerColor color)
+    {
+        if (game.CurrentTurn != color)
+            return new List<BotMove>();
+
+        return GenerateAllMoves(game);
+    }
+
+    private static PlayerColor Opponent(PlayerColor color)
+    {
+        return color == PlayerColor.Red ? PlayerColor.Green : PlayerColor.Red;
+    }
+
 }

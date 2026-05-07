@@ -7,10 +7,22 @@ namespace Bobail.Infrastructure.Bots;
 public class HardBotStrategy : IBotStrategy
 {
     private readonly record struct SearchCacheKey(
-        string State,
+        SearchBoardStateKey State,
         int Depth,
         bool MaximizingPlayer,
         PlayerColor BotColor);
+
+    private sealed record RootMoveCandidate(
+        BotMove Move,
+        Game GameAfterMove,
+        int StaticScore,
+        int TacticalScore,
+        bool IsImmediateWin,
+        bool AllowsImmediateOpponentWin,
+        bool CreatesForcedWin)
+    {
+        public int ScoreWithTactics => StaticScore + TacticalScore;
+    }
 
     private readonly HardBoardEvaluator _evaluator;
     private readonly ILogger<HardBotStrategy> _logger;
@@ -19,10 +31,10 @@ public class HardBotStrategy : IBotStrategy
     public BotDifficulty Difficulty => BotDifficulty.Hard;
 
     private const int RootMoveLimit = 6;
-    private const int MaxDepth = 3;
+    private const int MaxDepth = 4;
     private const int CandidatePoolSize = 3;
-    private const int ScoreWindow = 250;
-    private const double NearBestRandomizerChance = 0.15;
+    private const int ScoreWindow = 200;
+    private const double NearBestRandomizerChance = 0; //de schimbat la eval
     private const int ImmediateThreatPenalty = 250_000;
     private const int ForcedWinBonus = 180_000;
     private const int BackwardBobailPenalty = 1_400;
@@ -41,28 +53,36 @@ public class HardBotStrategy : IBotStrategy
 
         _transpositionTable.Clear();
 
-        var moveData = PrepareOrderedMoves(
-            game,
-            botColor: game.CurrentTurn,
-            maximizingPlayer: true,
-            takeLimit: RootMoveLimit); //de pus RootMoveLimit daca e cazul
+        var rootCandidates = PrepareRootMoveCandidates(game, game.CurrentTurn);
 
-        if (moveData.Count == 0)
+        if (rootCandidates.Count == 0)
             throw new InvalidOperationException("Hard bot has no valid moves.");
 
+        var immediateWin = rootCandidates
+            .Where(candidate => candidate.IsImmediateWin)
+            .OrderByDescending(candidate => candidate.ScoreWithTactics)
+            .FirstOrDefault();
+
+        if (immediateWin is not null)
+        {
+            _logger.LogInformation("Hard AI selected immediate winning move.");
+            return immediateWin.Move;
+        }
+
+        var moveData = SelectRootMoveCandidates(rootCandidates);
         var scoredMoves = new List<(BotMove move, int score)>(moveData.Count);
 
         foreach (var data in moveData)
         {
             int score = Minimax(
-                data.clone,
+                data.GameAfterMove,
                 MaxDepth - 1,
                 alpha: int.MinValue,
                 beta: int.MaxValue,
                 botColor: game.CurrentTurn);
 
-            score += EvaluateTacticalAdjustments(game, data.move, data.clone, game.CurrentTurn);
-            scoredMoves.Add((data.move, score));
+            score += data.TacticalScore;
+            scoredMoves.Add((data.Move, score));
         }
 
         int bestScore = scoredMoves.Max(x => x.score);
@@ -83,6 +103,66 @@ public class HardBotStrategy : IBotStrategy
         return selectedMove.move;
     }
 
+    private List<RootMoveCandidate> PrepareRootMoveCandidates(Game game, PlayerColor botColor)
+    {
+        var rootMoveData = PrepareOrderedMoves(
+            game,
+            botColor,
+            maximizingPlayer: true,
+            takeLimit: null);
+
+        var candidates = new List<RootMoveCandidate>(rootMoveData.Count);
+
+        foreach (var data in rootMoveData)
+        {
+            bool isImmediateWin = data.clone.Status == GameStatus.Finished &&
+                                  data.clone.Winner == botColor;
+            bool allowsImmediateOpponentWin = AllowsImmediateOpponentWin(data.clone, botColor);
+            bool createsForcedWin = !isImmediateWin &&
+                                    ShouldEvaluateForcedWin(data.clone, botColor) &&
+                                    CreatesForcedWinNextTurn(data.clone, botColor);
+
+            int tacticalScore = 0;
+
+            if (allowsImmediateOpponentWin)
+                tacticalScore -= ImmediateThreatPenalty;
+
+            if (createsForcedWin)
+                tacticalScore += ForcedWinBonus;
+
+            if (data.move.IsBobailMove)
+                tacticalScore -= EvaluateBackwardBobailPenalty(game, data.move, botColor);
+
+            candidates.Add(new RootMoveCandidate(
+                data.move,
+                data.clone,
+                data.score,
+                tacticalScore,
+                isImmediateWin,
+                allowsImmediateOpponentWin,
+                createsForcedWin));
+        }
+
+        return candidates;
+    }
+
+    private static List<RootMoveCandidate> SelectRootMoveCandidates(IReadOnlyList<RootMoveCandidate> candidates)
+    {
+        var safeCandidates = candidates
+            .Where(candidate => !candidate.AllowsImmediateOpponentWin)
+            .ToList();
+
+        var eligibleCandidates = safeCandidates.Count > 0
+            ? safeCandidates
+            : candidates;
+
+        return eligibleCandidates
+            .OrderByDescending(candidate => candidate.CreatesForcedWin)
+            .ThenByDescending(candidate => candidate.ScoreWithTactics)
+            .Take(RootMoveLimit)
+            .ToList();
+    }
+
     private int Minimax(
         Game game,
         int depth,
@@ -96,7 +176,7 @@ public class HardBotStrategy : IBotStrategy
         bool maximizingPlayer = game.CurrentTurn == botColor;
 
         var cacheKey = new SearchCacheKey(
-            BuildStateKey(game),
+            SearchBoardStateKeyBuilder.FromGame(game),
             depth,
             maximizingPlayer,
             botColor);
@@ -188,27 +268,6 @@ public class HardBotStrategy : IBotStrategy
             orderedMoves = orderedMoves.Take(takeLimit.Value);
 
         return orderedMoves.ToList();
-    }
-
-    private int EvaluateTacticalAdjustments(
-        Game originalGame,
-        BotMove move,
-        Game gameAfterMove,
-        PlayerColor botColor)
-    {
-        int score = 0;
-
-        if (AllowsImmediateOpponentWin(gameAfterMove, botColor))
-            score -= ImmediateThreatPenalty;
-
-        if (ShouldEvaluateForcedWin(gameAfterMove, botColor) &&
-            CreatesForcedWinNextTurn(gameAfterMove, botColor))
-            score += ForcedWinBonus;
-
-        if (move.IsBobailMove)
-            score -= EvaluateBackwardBobailPenalty(originalGame, move, botColor);
-
-        return score;
     }
 
     private List<BotMove> GenerateAllMoves(Game game)
@@ -398,22 +457,4 @@ public class HardBotStrategy : IBotStrategy
         return Math.Abs(row - targetRow);
     }
 
-    private static string BuildStateKey(Game game)
-    {
-        var pieces = game.Board.Pieces
-            .OrderBy(p => p.IsBobail ? 0 : 1)
-            .ThenBy(p => p.IsBobail ? -1 : (int)(p.Owner ?? throw new InvalidOperationException("Non-Bobail piece must have an owner.")))
-            .ThenBy(p => p.Position.Row)
-            .ThenBy(p => p.Position.Column)
-            .Select(p =>
-            {
-                string owner = p.IsBobail
-                    ? "B"
-                    : ((int)(p.Owner ?? throw new InvalidOperationException("Non-Bobail piece must have an owner."))).ToString();
-                return $"{owner}:{p.Position.Row},{p.Position.Column}";
-            });
-
-        return string.Join("|", pieces) +
-               $"|T:{(int)game.CurrentTurn}|P:{(int)game.CurrentPhase}|S:{(int)game.Status}";
-    }
 }
