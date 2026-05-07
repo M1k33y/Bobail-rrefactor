@@ -5,22 +5,21 @@ namespace Bobail.Training.Genetics;
 
 public sealed class EvaluationWeightsChromosome : ChromosomeBase
 {
-    // Each gene maps 1:1 to EvaluationWeights so the optimized genome can be reused directly by the game.
     private static readonly (int Min, int Max)[] GeneRanges =
     {
         (250, 900),     // ProgressWeight
-        (150, 700),     // PathToGoalWeight
-        (6_000, 16_000),// ImmediateWinThreatWeight
-        (8_000, 20_000),// ImmediateLossThreatWeight
-        (40, 220),      // BobailMobilityWeight
-        (80, 320),      // ForwardMobilityWeight
-        (180, 600),     // TrapRiskWeight
-        (80, 260),      // OpponentPressureWeight
-        (30, 140),      // FriendlySupportWeight
-        (80, 260),      // DestinationQualityWeight
-        (40, 260),      // CenterControlWeight
-        (40, 300),      // BehindBobailFormationWeight
-        (30, 220)       // TokenDevelopmentWeight
+        (0, 700),     // PathToGoalWeight
+        (1000, 24_000),// ImmediateWinThreatWeight
+        (4000, 30_000),// ImmediateLossThreatWeight
+        (40, 1400),      // BobailMobilityWeight
+        (100, 800),     // ForwardMobilityWeight
+        (200, 1_000),   // TrapRiskWeight
+        (100, 260),      // OpponentPressureWeight
+        (0, 800),      // FriendlySupportWeight
+        (1, 500),       // DestinationQualityWeight
+        (40, 1000),      // CenterControlWeight
+        (40, 1500),      // BehindBobailFormationWeight
+        (40, 500)       // TokenDevelopmentWeight
     };
 
     public EvaluationWeightsChromosome() : base(GeneRanges.Length)
@@ -33,6 +32,11 @@ public sealed class EvaluationWeightsChromosome : ChromosomeBase
         var (min, max) = GeneRanges[geneIndex];
         int value = RandomizationProvider.Current.GetInt(min, max + 1);
         return new Gene(value);
+    }
+
+    internal static (int Min, int Max) GetGeneRange(int geneIndex)
+    {
+        return GeneRanges[geneIndex];
     }
 
     public override IChromosome CreateNew()

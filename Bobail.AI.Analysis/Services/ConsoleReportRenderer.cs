@@ -12,8 +12,5 @@ public static class ConsoleReportRenderer
         Console.WriteLine($"  {summary.BotBName} wins: {summary.BotBWins} ({summary.BotBWinrate:F2}%)");
         Console.WriteLine($"  Draws / turn limit: {summary.Draws}");
         Console.WriteLine($"  Turns: avg={summary.AverageTurns:F2}, min={summary.MinTurns}, max={summary.MaxTurns}");
-        Console.WriteLine(
-            $"  Expected stronger ({summary.ExpectedStrongerName}) winrate: {summary.ExpectedStrongerWinrate:F2}% | " +
-            $"p={summary.OneSidedPValue:F4} | significant={summary.StatisticallySignificant}");
     }
 }
