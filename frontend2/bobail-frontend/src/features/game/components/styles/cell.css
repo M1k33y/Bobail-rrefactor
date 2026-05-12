@@ -1,6 +1,6 @@
 .cell {
-  width: 70px;
-  height: 70px;
+  width: var(--board-cell-size, 70px);
+  height: var(--board-cell-size, 70px);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -31,4 +31,38 @@
 
 .valid-move {
   box-shadow: 0 0 0 3px var(--validMoveGlow);
+}
+
+.cell-highlight-soft {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
+.cell-highlight-destination {
+  box-shadow:
+    inset 0 0 0 2px rgba(96, 165, 250, 0.9),
+    0 0 18px rgba(96, 165, 250, 0.2);
+}
+
+.cell-highlight-danger {
+  box-shadow:
+    inset 0 0 0 2px rgba(248, 113, 113, 0.9),
+    0 0 18px rgba(248, 113, 113, 0.2);
+}
+
+.cell-highlight-red-home {
+  background:
+    linear-gradient(rgba(248, 113, 113, 0.22), rgba(248, 113, 113, 0.22)),
+    var(--cellLight);
+}
+
+.cell-highlight-green-home {
+  background:
+    linear-gradient(rgba(74, 222, 128, 0.22), rgba(74, 222, 128, 0.22)),
+    var(--cellDark);
+}
+
+.cell-highlight-win {
+  box-shadow:
+    inset 0 0 0 2px rgba(250, 204, 21, 0.9),
+    0 0 20px rgba(250, 204, 21, 0.24);
 }

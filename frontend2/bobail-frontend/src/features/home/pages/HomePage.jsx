@@ -4,23 +4,10 @@ import "../styles/HomePage.css";
 
 function HomePage() {
   const navigate = useNavigate();
-  const { logout, isAuthenticated, nickname } = useAuth();
+  const { isAuthenticated, nickname } = useAuth();
 
   return (
     <div className="home-container">
-      {isAuthenticated ? (
-        <button className="logout-btn" onClick={logout}>
-          Logout
-        </button>
-      ) : (
-        <button
-          className="logout-btn"
-          onClick={() => navigate("/login")}
-        >
-          Login
-        </button>
-      )}
-
       {isAuthenticated && (
         <div className="welcome-banner">
           <span className="welcome-label">Welcome back</span>
