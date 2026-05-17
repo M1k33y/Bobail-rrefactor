@@ -11,6 +11,10 @@
   transform: scale(1.05);
 }
 
+.board-static .piece:hover {
+  transform: none;
+}
+
 .red {
   background: var(--red);
 }

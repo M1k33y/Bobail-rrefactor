@@ -167,40 +167,23 @@ export function useGame(gameId) {
     );
 
     if (!selected) {
-      if (!piece) return;
-
-      if (
-        game.currentPhase === "PlayerMoveRequired" &&
-        (piece.type !== "PlayerPiece" ||
-          piece.owner !== game.currentTurn)
-      )
-        return;
-
-      if (
-        game.currentPhase === "BobailMoveRequired" &&
-        piece.type !== "Bobail"
-      )
-        return;
-
-      let moves = [];
-
-      try {
-        if (game.currentPhase === "PlayerMoveRequired") {
-          moves = await gameApi.getValidPlayerMoves(gameId, row, col);
-        }
-
-        if (game.currentPhase === "BobailMoveRequired") {
-          moves = await gameApi.getValidBobailMoves(gameId);
-        }
-      } catch (err) {
-        console.error("Get moves error:", err);
-        return;
+      if (canSelectPiece(piece)) {
+        await selectPiece(row, col);
       }
+      return;
+    }
 
-      if (!moves || moves.length === 0) return;
+    if (isSelectedCell) {
+      clearSelection();
+      return;
+    }
 
-      setSelected({ row, col });
-      setValidMoves(moves);
+    if (canSelectPiece(piece)) {
+      await selectPiece(row, col);
+      return;
+    }
+
+    if (!isValidDestination) {
       return;
     }
 

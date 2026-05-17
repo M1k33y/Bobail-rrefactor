@@ -1,10 +1,13 @@
 .sidebar {
   width: 240px;
+  min-height: 100vh;
   background: var(--sidebar);
-  padding: 30px 20px;
+  padding: 30px 20px 20px;
   display: flex;
   flex-direction: column;
   border-right: 1px solid rgba(0,0,0,0.1);
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -18,6 +21,11 @@
 
 .menu-group {
   position: relative;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
 }
 
 .menu-item,
@@ -73,4 +81,159 @@
 a.active {
   background-color: rgba(0,0,0,0.08);
   opacity: 1;
+}
+
+.sidebar-user-profile {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.sidebar-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--surfaceStrong), var(--surfaceSoft));
+  box-shadow: 0 12px 28px var(--shadow);
+  backdrop-filter: blur(12px);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sidebar-login-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: linear-gradient(135deg, var(--surfaceStrong), var(--surfaceSoft));
+  box-shadow: 0 12px 28px var(--shadow);
+  backdrop-filter: blur(12px);
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sidebar-login-card:hover,
+.sidebar-login-card.active {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: var(--surfaceStrong);
+  box-shadow: 0 16px 34px var(--shadow);
+}
+
+.sidebar-login-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent), var(--accentStrong));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 18px var(--shadow);
+}
+
+.sidebar-login-details {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar-login-title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sidebar-login-subtitle {
+  color: var(--mutedText);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.sidebar-login-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sidebar-user-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: var(--surfaceStrong);
+  box-shadow: 0 16px 34px var(--shadow);
+}
+
+.sidebar-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent), var(--accentStrong));
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 18px var(--shadow);
+}
+
+.sidebar-user-details {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar-user-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-role {
+  color: var(--mutedText);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.sidebar-logout-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--mutedText);
+  background: var(--surface);
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.sidebar-logout-button:hover {
+  transform: none;
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--surfaceStrong);
+  box-shadow: none;
+}
+
+.sidebar-logout-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
