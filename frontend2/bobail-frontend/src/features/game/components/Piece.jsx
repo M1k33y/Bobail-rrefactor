@@ -1,4 +1,4 @@
-import "./styles/Piece.css";
+import "./styles/piece.css";
 
 function Piece({ type, owner }) {
   let pieceClass = "";
