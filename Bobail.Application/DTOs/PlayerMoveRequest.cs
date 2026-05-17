@@ -1,4 +1,6 @@
-﻿public class PlayerMoveRequest
+namespace Bobail.Application.DTOs;
+
+public class PlayerMoveRequest
 {
     public int FromRow { get; set; }
     public int FromColumn { get; set; }

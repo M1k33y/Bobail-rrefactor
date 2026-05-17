@@ -14,3 +14,7 @@ TestResults/
 # Node (dacă ai frontend)
 node_modules/
 dist/
+
+#loguri
+*.log
+*.binlog

@@ -7,6 +7,30 @@ export const gameApi = {
         return res.json();
     },
 
+    createOnline: async () => {
+        const res = await authFetch(`${API}/online`, { method: "POST" });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Failed to create online game.");
+        }
+
+        return res.json();
+    },
+
+    joinOnline: async (gameId) => {
+        const res = await authFetch(`${API}/${gameId}/join-online`, {
+            method: "POST"
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Failed to join online game.");
+        }
+
+        return res.json();
+    },
+
     get: async (gameId) => {
         const res = await authFetch(`${API}/${gameId}`);
         return res.json();

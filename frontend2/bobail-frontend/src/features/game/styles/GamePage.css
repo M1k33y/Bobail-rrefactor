@@ -16,6 +16,31 @@
   opacity: 0.8;
 }
 
+.online-game-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.online-connected {
+  color: #86efac;
+}
+
+.online-connecting,
+.online-waiting {
+  color: #fde68a;
+}
+
+.online-error {
+  color: #fecaca;
+  font-size: 0.9rem;
+}
+
 @keyframes pulse {
   from { opacity: 0.5; }
   to { opacity: 1; }

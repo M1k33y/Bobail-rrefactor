@@ -6,6 +6,7 @@ import SettingsPage from "../features/settings/pages/SettingsPage";
 import GamePage from "../features/game/pages/GamePage";
 import LocalGameStartPage from "../features/game/pages/LocalGameStartPage";
 import BotGameStartPage from "../features/game/pages/BotGameStartPage";
+import OnlineGameStartPage from "../features/game/pages/OnlineGameStartPage";
 import NotFound from "./pages/NotFound";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
@@ -56,7 +57,22 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      { path: "/play/online", element: <div>Online Coming Soon</div> },
+      {
+        path: "/play/online",
+        element: (
+          <ProtectedRoute>
+            <OnlineGameStartPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/play/online/:gameId",
+        element: (
+          <ProtectedRoute>
+            <GamePage />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "/game-history",
         element: (

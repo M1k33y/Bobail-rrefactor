@@ -15,6 +15,7 @@ public class GameResponse
     public string CurrentPhase { get; set; } = string.Empty;
     public string Mode { get; set; } = string.Empty;
     public string? BotColor { get; set; }
+    public string? PlayerColor { get; set; }
 
     public List<PieceDto> Pieces { get; set; } = new();
 }

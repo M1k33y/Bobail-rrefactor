@@ -67,7 +67,7 @@ function HomePage() {
           onClick={() => navigate("/play/online")}
         >
           <h3>Play Online</h3>
-          <p>Compete against other players. (Coming Soon)</p>
+          <p>Compete against another player in real time.</p>
         </div>
 
         <div

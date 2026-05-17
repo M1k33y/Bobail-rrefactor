@@ -1,4 +1,5 @@
 using Bobail.Application.Interfaces.Repositories;
+using Bobail.Domain.Common;
 using Bobail.Domain.Games;
 using Bobail.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -88,8 +89,78 @@ public class SqlGamePlayerRepository : IGamePlayerRepository
         }
     }
 
-    public Task<bool> UserParticipatesInGameAsync(Guid gameId, Guid userId)
+    public Task<bool> UserParticipatesInGameAsync(
+        Guid gameId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
     {
-        return _context.GamePlayers.AnyAsync(x => x.GameId == gameId && x.UserId == userId);
+        return _context.GamePlayers.AnyAsync(
+            x => x.GameId == gameId && x.UserId == userId,
+            cancellationToken);
+    }
+
+    public async Task<PlayerColor?> GetPlayerColorAsync(
+        Guid gameId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var color = await _context.GamePlayers
+            .Where(x => x.GameId == gameId && x.UserId == userId)
+            .Select(x => (int?)x.Color)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return color.HasValue
+            ? (PlayerColor)color.Value
+            : null;
+    }
+
+    public async Task<PlayerColor> AddOnlinePlayerAsync(
+        Guid gameId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var existingColor = await GetPlayerColorAsync(
+            gameId,
+            userId,
+            cancellationToken);
+
+        if (existingColor.HasValue)
+            return existingColor.Value;
+
+        var players = await _context.GamePlayers
+            .Where(x => x.GameId == gameId && !x.IsBot)
+            .ToListAsync(cancellationToken);
+
+        if (players.Count >= 2)
+            throw new DomainException("Game already has two players.");
+
+        var color = players.Any(x => x.Color == (int)PlayerColor.Red)
+            ? PlayerColor.Green
+            : PlayerColor.Red;
+
+        if (players.Any(x => x.Color == (int)color))
+            throw new DomainException("Player slot is already taken.");
+
+        _context.GamePlayers.Add(new GamePlayerEntity
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            UserId = userId,
+            Color = (int)color,
+            IsBot = false
+        });
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return color;
+    }
+
+    public Task<int> CountHumanPlayersAsync(
+        Guid gameId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.GamePlayers.CountAsync(
+            x => x.GameId == gameId && !x.IsBot,
+            cancellationToken);
     }
 }

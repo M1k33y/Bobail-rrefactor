@@ -54,7 +54,9 @@ public class Game : Entity
 
         CurrentTurn = PlayerColor.Red;
         IsFirstTurn = true;
-        Status = GameStatus.InProgress;
+        Status = mode == GameMode.OnlineMultiplayer
+            ? GameStatus.WaitingForPlayers
+            : GameStatus.InProgress;
         CurrentPhase = TurnPhase.PlayerMoveRequired;
 
         Mode = mode;
@@ -65,6 +67,17 @@ public class Game : Entity
     public void Abandon()
     {
         Status = GameStatus.Abandoned;
+    }
+
+    public void Start()
+    {
+        if (Mode != GameMode.OnlineMultiplayer)
+            throw new DomainException("Only online games can wait for players.");
+
+        if (Status != GameStatus.WaitingForPlayers)
+            return;
+
+        Status = GameStatus.InProgress;
     }
 
     public bool IsBotTurn()
