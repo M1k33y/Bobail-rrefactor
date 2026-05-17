@@ -7,10 +7,10 @@ var settings = new TrainingSettings
 {
     EasyGamesPerGenome = 6,
     MediumGamesPerGenome = 26,
-    MaxTurnsPerGame = 100,
-    Generations = 150,
-    PopulationMinSize = 60,
-    PopulationMaxSize = 90
+    MaxTurnsPerGame = 200,
+    Generations = 200,
+    PopulationMinSize = 50,
+    PopulationMaxSize = 100
 
 
 

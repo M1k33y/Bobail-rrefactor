@@ -14,14 +14,17 @@ namespace Bobail.API.Controllers;
 public class GamesController : ControllerBase
 {
     private readonly IGameService _gameService;
+    private readonly IOnlineGameService _onlineGameService;
     private readonly IGamePlayerRepository _gamePlayerRepository;
 
 
     public GamesController(
      IGameService gameService,
+     IOnlineGameService onlineGameService,
      IGamePlayerRepository gamePlayerRepository)
     {
         _gameService = gameService;
+        _onlineGameService = onlineGameService;
         _gamePlayerRepository = gamePlayerRepository;
     }
 
@@ -43,6 +46,38 @@ public class GamesController : ControllerBase
         {
             GameId = gameId
         });
+    }
+
+    [Authorize]
+    [HttpPost("online")]
+    public async Task<ActionResult> CreateOnlineGame(CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+
+        var gameId = await _onlineGameService.CreateOnlineGameAsync(
+            userId,
+            cancellationToken);
+
+        return Ok(new CreateGameResponse
+        {
+            GameId = gameId
+        });
+    }
+
+    [Authorize]
+    [HttpPost("{id:guid}/join-online")]
+    public async Task<ActionResult<GameResponse>> JoinOnlineGame(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+
+        var state = await _onlineGameService.JoinOnlineGameAsync(
+            id,
+            userId,
+            cancellationToken);
+
+        return Ok(state);
     }
 
     [Authorize]
@@ -75,25 +110,16 @@ public class GamesController : ControllerBase
     {
         var game = await _gameService.GetGameAsync(id);
 
-        var response = new GameResponse
-        {
-            Id = game.Id,
-            Status = game.Status.ToString(),
-            CurrentTurn = game.CurrentTurn.ToString(),
-            Winner = game.Winner?.ToString(),
-            IsFirstTurn = game.IsFirstTurn,
-            CurrentPhase = game.CurrentPhase.ToString(),
-            Mode = game.Mode.ToString(),
-            BotColor = game.BotColor?.ToString(),   
+        PlayerColor? playerColor = null;
 
-            Pieces = game.Board.Pieces.Select(p => new PieceDto
-            {
-                Type = p.Type.ToString(),
-                Owner = p.Owner?.ToString(),
-                Row = p.Position.Row,
-                Column = p.Position.Column
-            }).ToList()
-        };
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            playerColor = await _gamePlayerRepository.GetPlayerColorAsync(
+                id,
+                User.GetUserId());
+        }
+
+        var response = GameResponseMapper.ToResponse(game, playerColor);
 
         return Ok(response);
     }
@@ -104,6 +130,18 @@ public class GamesController : ControllerBase
         Guid id,
         [FromBody] PlayerMoveRequest request)
     {
+        var game = await _gameService.GetGameAsync(id);
+
+        if (game.Mode == GameMode.OnlineMultiplayer)
+        {
+            await _onlineGameService.ExecutePlayerMoveAsync(
+                id,
+                User.GetUserId(),
+                request);
+
+            return NoContent();
+        }
+
         await _gameService.ExecutePlayerMoveAsync(
             id,
             request.FromRow,
@@ -120,6 +158,18 @@ public class GamesController : ControllerBase
         Guid id,
         [FromBody] BobailMoveRequest request)
     {
+        var game = await _gameService.GetGameAsync(id);
+
+        if (game.Mode == GameMode.OnlineMultiplayer)
+        {
+            await _onlineGameService.ExecuteBobailMoveAsync(
+                id,
+                User.GetUserId(),
+                request);
+
+            return NoContent();
+        }
+
         await _gameService.ExecuteBobailMoveAsync(
             id,
             request.ToRow,

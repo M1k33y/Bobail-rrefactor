@@ -1,4 +1,6 @@
+using Bobail.API.Hubs;
 using Bobail.API.Middleware;
+using Bobail.API.Realtime;
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
 using Bobail.Application.Services;
@@ -77,7 +79,10 @@ builder.Services.AddSingleton<IEmailSender>(sp =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IOnlineGameService, OnlineGameService>();
 builder.Services.AddScoped<IBotService, BotService>();
+builder.Services.AddSingleton<IGameLockManager, InMemoryGameLockManager>();
+builder.Services.AddSingleton<IGameConnectionTracker, InMemoryGameConnectionTracker>();
 
 builder.Services.AddSingleton<EvaluationWeights>();
 
@@ -96,11 +101,14 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
+
+builder.Services.AddSignalR();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -121,6 +129,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = ClaimTypes.Role,
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/hubs/game"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -157,6 +182,7 @@ app.UseAuthentication();
 app.UseMiddleware<ActiveUserMiddleware>();
 app.UseAuthorization();
 
+app.MapHub<GameHub>("/hubs/game");
 app.MapControllers();
 
 app.Run();
