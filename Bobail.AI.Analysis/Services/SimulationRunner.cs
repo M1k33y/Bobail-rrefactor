@@ -23,20 +23,20 @@ public sealed class SimulationRunner
         {
             bool botAStarts = gameIndex % 2 == 0;
 
-            var redDifficulty = botAStarts ? matchup.BotA : matchup.BotB;
-            var greenDifficulty = botAStarts ? matchup.BotB : matchup.BotA;
+            var redProfile = botAStarts ? matchup.BotA : matchup.BotB;
+            var greenProfile = botAStarts ? matchup.BotB : matchup.BotA;
 
-            var redBot = _botFactory.Create(redDifficulty);
-            var greenBot = _botFactory.Create(greenDifficulty);
+            var redBot = _botFactory.Create(redProfile);
+            var greenBot = _botFactory.Create(greenProfile);
 
             results[gameIndex] = PlaySingleGame(
                 matchup.BotAName,
                 matchup.BotBName,
-                botAStarts ? matchup.BotAName : matchup.BotBName,
+                redProfile.Name,
                 redBot,
                 greenBot,
-                redDifficulty,
-                greenDifficulty);
+                redProfile,
+                greenProfile);
         });
 
         return results;
@@ -48,8 +48,8 @@ public sealed class SimulationRunner
         string startingBotName,
         IBotStrategy redBot,
         IBotStrategy greenBot,
-        BotDifficulty redDifficulty,
-        BotDifficulty greenDifficulty)
+        BotProfile redProfile,
+        BotProfile greenProfile)
     {
         var game = new Game(GameMode.LocalMultiplayer);
         int turns = 0;
@@ -58,7 +58,7 @@ public sealed class SimulationRunner
         {
             if (!HasAnyValidMove(game))
             {
-                string winner = ResolveBotName(botAName, botBName, redDifficulty, greenDifficulty, Opponent(game.CurrentTurn));
+                string winner = ResolveBotName(redProfile, greenProfile, Opponent(game.CurrentTurn));
                 return new MatchGameResult(botAName, botBName, startingBotName, winner, turns, false);
             }
 
@@ -75,7 +75,7 @@ public sealed class SimulationRunner
 
         var winnerName = game.Winner is null
             ? null
-            : ResolveBotName(botAName, botBName, redDifficulty, greenDifficulty, game.Winner.Value);
+            : ResolveBotName(redProfile, greenProfile, game.Winner.Value);
 
         return new MatchGameResult(
             botAName,
@@ -97,14 +97,13 @@ public sealed class SimulationRunner
     }
 
     private static string ResolveBotName(
-        string botAName,
-        string botBName,
-        BotDifficulty redDifficulty,
-        BotDifficulty greenDifficulty,
+        BotProfile redProfile,
+        BotProfile greenProfile,
         PlayerColor winner)
     {
-        var winningDifficulty = winner == PlayerColor.Red ? redDifficulty : greenDifficulty;
-        return winningDifficulty.ToString() == botAName ? botAName : botBName;
+        return winner == PlayerColor.Red
+            ? redProfile.Name
+            : greenProfile.Name;
     }
 
     private static PlayerColor Opponent(PlayerColor color)

@@ -18,3 +18,7 @@ dist/
 #loguri
 *.log
 *.binlog
+
+# Generated AI/training outputs
+training-output/
+analysis-output/

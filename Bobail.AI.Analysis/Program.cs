@@ -1,31 +1,38 @@
 using Bobail.AI.Analysis.Models;
 using Bobail.AI.Analysis.Services;
-using Bobail.Application.Services.Bot;
-using Bobail.Domain.Games;
 
 var options = AnalysisOptions.Default;
 var outputDirectory = OutputPaths.Create(options.OutputRootDirectory);
 
-var botFactory = new BotFactory(new EvaluationWeights());
+var profileLoader = new BotProfileLoader();
+var profiles = profileLoader.Load(options);
+var botFactory = new BotFactory();
 var simulationRunner = new SimulationRunner(botFactory, options.MaxTurnsPerGame);
 var statisticsAggregator = new StatisticsAggregator();
 var csvExporter = new CsvExporter();
 var graphGenerator = new GraphGenerator();
-
-var matchupDefinitions = new[]
-{
-    MatchupDefinition.Create(BotDifficulty.Hard, BotDifficulty.Medium),
-    MatchupDefinition.Create(BotDifficulty.Medium, BotDifficulty.Easy),
-    MatchupDefinition.Create(BotDifficulty.Hard, BotDifficulty.Easy)
-};
+var matchupDefinitions = MatchupDefinition.CreateRoundRobin(profiles);
 
 var allResults = new List<MatchGameResult>();
 var summaries = new List<MatchupSummary>();
 
-Console.WriteLine("Running Bobail difficulty analysis...");
+Console.WriteLine("Running Bobail bot profile analysis...");
 Console.WriteLine($"Games per matchup: {options.GamesPerMatchup}");
 Console.WriteLine($"Max turns per game: {options.MaxTurnsPerGame}");
+Console.WriteLine($"Profile directory: {options.ProfileInputDirectory ?? "(none)"}");
+Console.WriteLine("Profiles:");
+foreach (var profile in profiles)
+{
+    Console.WriteLine($"- {profile.Name} ({profile.Difficulty})");
+}
+
 Console.WriteLine();
+
+if (profiles.Count < 2)
+{
+    Console.WriteLine("At least two bot profiles are required for analysis.");
+    return;
+}
 
 foreach (var matchup in matchupDefinitions)
 {
@@ -45,6 +52,7 @@ var turnDistributions = statisticsAggregator.BuildWinningTurnDistributions(allRe
 
 csvExporter.ExportGameResults(Path.Combine(outputDirectory, "game-results.csv"), allResults);
 csvExporter.ExportMatchupSummaries(Path.Combine(outputDirectory, "matchup-summary.csv"), summaries);
+csvExporter.ExportWinrateMatrix(Path.Combine(outputDirectory, "winrate-matrix.csv"), profiles, summaries);
 
 graphGenerator.SaveWinningTurnDistribution(
     Path.Combine(outputDirectory, "distribution.png"),
@@ -56,5 +64,6 @@ graphGenerator.SaveWinrateComparison(
 
 Console.WriteLine($"- {Path.Combine(outputDirectory, "game-results.csv")}");
 Console.WriteLine($"- {Path.Combine(outputDirectory, "matchup-summary.csv")}");
+Console.WriteLine($"- {Path.Combine(outputDirectory, "winrate-matrix.csv")}");
 Console.WriteLine($"- {Path.Combine(outputDirectory, "distribution.png")}");
 Console.WriteLine($"- {Path.Combine(outputDirectory, "winrate.png")}");

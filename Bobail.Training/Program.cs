@@ -1,11 +1,12 @@
 using Bobail.Application.Services.Bot;
 using Bobail.Training.Genetics;
+using Bobail.Training.Profiles;
 using Bobail.Training.Simulation;
 using GeneticSharp;
 
 var settings = new TrainingSettings
 {
-    EasyGamesPerGenome = 6,
+    EasyGamesPerGenome = 4,
     MediumGamesPerGenome = 26,
     MaxTurnsPerGame = 200,
     Generations = 200,
@@ -43,6 +44,7 @@ double bestFitnessSoFar = double.MinValue;
 double lastMeaningfulImprovementFitness = double.MinValue;
 EvaluationWeights? bestWeightsSoFar = null;
 int stagnantGenerations = 0;
+int bestGeneration = 0;
 
 ga.MutationProbability = baseMutationProbability;
 
@@ -62,6 +64,7 @@ ga.GenerationRan += (_, _) =>
         {
             bestFitnessSoFar = generationFitness;
             bestWeightsSoFar = bestChromosome.ToWeights();
+            bestGeneration = ga.GenerationsNumber;
         }
 
         if (generationFitness > lastMeaningfulImprovementFitness + improvementEpsilon)
@@ -102,3 +105,31 @@ Console.WriteLine($"Best fitness: {bestFitnessSoFar:F2}");
 Console.WriteLine($"Best weights: {bestWeightsSoFar}");
 Console.WriteLine($"Final generation best fitness: {finalGenerationBest.Fitness:F2}");
 Console.WriteLine($"Final generation best weights: {finalGenerationBest.ToWeights()}");
+
+var createdAtUtc = DateTime.UtcNow;
+var profile = new TrainingRunProfile(
+    Name: $"Hard_GA_{createdAtUtc:yyyyMMdd_HHmmss}",
+    Difficulty: "Hard",
+    CreatedAtUtc: createdAtUtc,
+    BestFitness: bestFitnessSoFar,
+    BestGeneration: bestGeneration,
+    FinalGeneration: ga.GenerationsNumber,
+    FinalGenerationBestFitness: finalGenerationBest.Fitness.GetValueOrDefault(),
+    Settings: settings,
+    MutationSettings: new MutationSettingsProfile(
+        baseMutationProbability,
+        mediumMutationProbability,
+        highMutationProbability,
+        improvementEpsilon),
+    GeneRanges: EvaluationWeightsChromosome.GetGeneRangeDefinitions()
+        .Select(range => new GeneRangeProfile(range.Name, range.Min, range.Max))
+        .ToList(),
+    Weights: bestWeightsSoFar);
+
+var trainingProjectDirectory = Path.GetFullPath(
+    Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+var profilePath = TrainingProfileWriter.Save(
+    profile,
+    Path.Combine(trainingProjectDirectory, "training-output"));
+
+Console.WriteLine($"Saved best profile: {profilePath}");

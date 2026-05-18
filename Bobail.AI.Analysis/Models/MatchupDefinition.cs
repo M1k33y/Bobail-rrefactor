@@ -1,21 +1,25 @@
-using Bobail.Domain.Games;
-
 namespace Bobail.AI.Analysis.Models;
 
 public sealed record MatchupDefinition(
-    BotDifficulty BotA,
-    BotDifficulty BotB,
-    BotDifficulty ExpectedStronger)
+    BotProfile BotA,
+    BotProfile BotB)
 {
-    public string BotAName => BotA.ToString();
+    public string BotAName => BotA.Name;
 
-    public string BotBName => BotB.ToString();
+    public string BotBName => BotB.Name;
 
-    public string ExpectedStrongerName => ExpectedStronger.ToString();
-
-    public static MatchupDefinition Create(BotDifficulty botA, BotDifficulty botB)
+    public static IReadOnlyList<MatchupDefinition> CreateRoundRobin(IReadOnlyList<BotProfile> profiles)
     {
-        var expectedStronger = (BotDifficulty)Math.Max((int)botA, (int)botB);
-        return new MatchupDefinition(botA, botB, expectedStronger);
+        var matchups = new List<MatchupDefinition>();
+
+        for (int i = 0; i < profiles.Count; i++)
+        {
+            for (int j = i + 1; j < profiles.Count; j++)
+            {
+                matchups.Add(new MatchupDefinition(profiles[i], profiles[j]));
+            }
+        }
+
+        return matchups;
     }
 }
