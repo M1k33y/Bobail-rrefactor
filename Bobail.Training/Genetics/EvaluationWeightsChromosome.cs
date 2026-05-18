@@ -5,21 +5,38 @@ namespace Bobail.Training.Genetics;
 
 public sealed class EvaluationWeightsChromosome : ChromosomeBase
 {
+    private static readonly string[] GeneNames =
+    {
+        nameof(EvaluationWeights.ProgressWeight),
+        nameof(EvaluationWeights.PathToGoalWeight),
+        nameof(EvaluationWeights.ImmediateWinThreatWeight),
+        nameof(EvaluationWeights.ImmediateLossThreatWeight),
+        nameof(EvaluationWeights.BobailMobilityWeight),
+        nameof(EvaluationWeights.ForwardMobilityWeight),
+        nameof(EvaluationWeights.TrapRiskWeight),
+        nameof(EvaluationWeights.OpponentPressureWeight),
+        nameof(EvaluationWeights.FriendlySupportWeight),
+        nameof(EvaluationWeights.DestinationQualityWeight),
+        nameof(EvaluationWeights.CenterControlWeight),
+        nameof(EvaluationWeights.BehindBobailFormationWeight),
+        nameof(EvaluationWeights.TokenDevelopmentWeight)
+    };
+
     private static readonly (int Min, int Max)[] GeneRanges =
     {
-        (250, 900),     // ProgressWeight
-        (0, 700),     // PathToGoalWeight
+        (100, 1500),     // ProgressWeight
+        (0, 1200),     // PathToGoalWeight
         (1000, 24_000),// ImmediateWinThreatWeight
         (4000, 30_000),// ImmediateLossThreatWeight
         (40, 1400),      // BobailMobilityWeight
-        (100, 800),     // ForwardMobilityWeight
-        (200, 1_000),   // TrapRiskWeight
-        (100, 260),      // OpponentPressureWeight
-        (0, 800),      // FriendlySupportWeight
-        (1, 500),       // DestinationQualityWeight
+        (100, 1200),     // ForwardMobilityWeight
+        (200, 2000),   // TrapRiskWeight
+        (0, 500),      // OpponentPressureWeight
+        (0, 1200),      // FriendlySupportWeight
+        (1, 900),       // DestinationQualityWeight
         (40, 1000),      // CenterControlWeight
-        (40, 1500),      // BehindBobailFormationWeight
-        (40, 500)       // TokenDevelopmentWeight
+        (40, 2500),      // BehindBobailFormationWeight
+        (40, 900)       // TokenDevelopmentWeight
     };
 
     public EvaluationWeightsChromosome() : base(GeneRanges.Length)
@@ -37,6 +54,17 @@ public sealed class EvaluationWeightsChromosome : ChromosomeBase
     internal static (int Min, int Max) GetGeneRange(int geneIndex)
     {
         return GeneRanges[geneIndex];
+    }
+
+    public static IReadOnlyList<(string Name, int Min, int Max)> GetGeneRangeDefinitions()
+    {
+        return GeneNames
+            .Select((name, index) =>
+            {
+                var (min, max) = GeneRanges[index];
+                return (name, min, max);
+            })
+            .ToList();
     }
 
     public override IChromosome CreateNew()

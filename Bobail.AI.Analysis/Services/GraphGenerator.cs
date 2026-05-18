@@ -47,10 +47,10 @@ public sealed class GraphGenerator
             .Select((summary, index) => new Bar
             {
                 Position = index,
-                Value = summary.ExpectedStrongerWinrate,
+                Value = summary.LeaderWinrate,
                 Label = summary.MatchupName,
-                FillColor = ResolveColor(summary.ExpectedStrongerName),
-                ValueLabel = $"{summary.ExpectedStrongerWinrate:F1}%"
+                FillColor = ResolveColor(summary.LeaderName),
+                ValueLabel = $"{summary.LeaderWinrate:F1}%"
             })
             .ToArray();
 
@@ -59,13 +59,25 @@ public sealed class GraphGenerator
             summaries.Select((_, index) => (double)index).ToArray(),
             summaries.Select(summary => summary.MatchupName).ToArray());
 
-        plot.Title("Expected Stronger Bot Winrate");
+        plot.Title("Matchup Leader Winrate");
         plot.YLabel("Winrate (%)");
         plot.SavePng(outputPath, 1200, 800);
     }
 
     private static Color ResolveColor(string botName)
     {
+        if (botName.Contains("Easy", StringComparison.OrdinalIgnoreCase))
+            return Colors.Orange;
+
+        if (botName.Contains("Medium", StringComparison.OrdinalIgnoreCase))
+            return Colors.SeaGreen;
+
+        if (botName.Contains("Hard", StringComparison.OrdinalIgnoreCase) ||
+            botName.Contains("GA", StringComparison.OrdinalIgnoreCase))
+        {
+            return Colors.Crimson;
+        }
+
         return BotColors.TryGetValue(botName, out var color)
             ? color
             : Colors.SlateGray;
@@ -75,9 +87,10 @@ public sealed class GraphGenerator
     {
         return botName switch
         {
-            "Easy" => 0,
-            "Medium" => 1,
-            "Hard" => 2,
+            var name when name.Contains("Easy", StringComparison.OrdinalIgnoreCase) => 0,
+            var name when name.Contains("Medium", StringComparison.OrdinalIgnoreCase) => 1,
+            var name when name.Contains("Hard", StringComparison.OrdinalIgnoreCase) => 2,
+            var name when name.Contains("GA", StringComparison.OrdinalIgnoreCase) => 3,
             _ => int.MaxValue
         };
     }

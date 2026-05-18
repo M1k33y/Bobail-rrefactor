@@ -1,3 +1,4 @@
+using Bobail.AI.Analysis.Models;
 using Bobail.Application.Services.Bot;
 using Bobail.Domain.Games;
 using Bobail.Infrastructure.Bots;
@@ -7,25 +8,21 @@ namespace Bobail.AI.Analysis.Services;
 
 public sealed class BotFactory
 {
-    private readonly EvaluationWeights _hardWeights;
-
-    public BotFactory(EvaluationWeights hardWeights)
+    public IBotStrategy Create(BotProfile profile)
     {
-        _hardWeights = hardWeights;
-    }
-
-    public IBotStrategy Create(BotDifficulty difficulty)
-    {
-        return difficulty switch
+        return profile.Difficulty switch
         {
             BotDifficulty.Easy => new EasyBotStrategy(),
             BotDifficulty.Medium => new MediumBotStrategy(
-                new MediumBoardEvaluator(_hardWeights),
+                new MediumBoardEvaluator(profile.Weights),
                 NullLogger<MediumBotStrategy>.Instance),
             BotDifficulty.Hard => new HardBotStrategy(
-                new HardBoardEvaluator(_hardWeights),
+                new HardBoardEvaluator(profile.Weights),
                 NullLogger<HardBotStrategy>.Instance),
-            _ => throw new ArgumentOutOfRangeException(nameof(difficulty), difficulty, "Unsupported difficulty.")
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(profile),
+                profile.Difficulty,
+                "Unsupported difficulty.")
         };
     }
 }
