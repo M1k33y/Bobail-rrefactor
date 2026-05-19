@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 
+namespace Bobail.Application.Validators;
+
 //Am nevoie de un PasswordPolicy sa nu am 100 de regexuri si sa unesc inconsistentele cu frontul peste tot reset/change password
 public static partial class PasswordPolicy
 {

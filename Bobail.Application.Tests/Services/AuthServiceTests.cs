@@ -1,5 +1,8 @@
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
+using Bobail.Application.Services;
+using Bobail.Application.Validators;
+using Bobail.Domain.Common;
 using Bobail.Domain.Users;
 using FluentValidation;
 using FluentValidation.Results;
@@ -96,7 +99,7 @@ namespace Bobail.Application.Tests.Services
 
             var service = CreateService(userRepoMock);
 
-            var exception = await Assert.ThrowsAsync<Exception>(() =>
+            var exception = await Assert.ThrowsAsync<DomainException>(() =>
                 service.LoginAsync("test@mail.com", password, false));
 
             Assert.Equal("This user is currently banned.", exception.Message);
@@ -120,7 +123,7 @@ namespace Bobail.Application.Tests.Services
 
             var service = CreateService(userRepoMock);
 
-            var exception = await Assert.ThrowsAsync<Exception>(() =>
+            var exception = await Assert.ThrowsAsync<DomainException>(() =>
                 service.LoginAsync("test@mail.com", password, false));
 
             Assert.Equal("Please verify your email before logging in", exception.Message);
@@ -249,7 +252,7 @@ namespace Bobail.Application.Tests.Services
                 userRepoMock,
                 passwordResetTokenRepoMock: passwordResetTokenRepoMock);
 
-            var exception = await Assert.ThrowsAsync<Exception>(() =>
+            var exception = await Assert.ThrowsAsync<DomainException>(() =>
                 service.ResetPasswordAsync("token", "weakpass"));
 
             Assert.Equal(PasswordPolicy.PasswordRequirementsMessage, exception.Message);

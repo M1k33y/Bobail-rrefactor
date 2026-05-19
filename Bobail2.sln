@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bobail.Training", "Bobail.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bobail.AI.Analysis", "Bobail.AI.Analysis\Bobail.AI.Analysis.csproj", "{26B9A7EE-FF68-46A6-99AA-80377DFAC105}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bobail.Infrastructure.Tests", "Bobail.Infrastructure.Tests\Bobail.Infrastructure.Tests.csproj", "{2A067213-DEAB-4568-B4EB-B36E2839BE37}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -143,6 +145,18 @@ Global
 		{26B9A7EE-FF68-46A6-99AA-80377DFAC105}.Release|x64.Build.0 = Release|Any CPU
 		{26B9A7EE-FF68-46A6-99AA-80377DFAC105}.Release|x86.ActiveCfg = Release|Any CPU
 		{26B9A7EE-FF68-46A6-99AA-80377DFAC105}.Release|x86.Build.0 = Release|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Debug|x64.Build.0 = Debug|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Debug|x86.Build.0 = Debug|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Release|x64.ActiveCfg = Release|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Release|x64.Build.0 = Release|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Release|x86.ActiveCfg = Release|Any CPU
+		{2A067213-DEAB-4568-B4EB-B36E2839BE37}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

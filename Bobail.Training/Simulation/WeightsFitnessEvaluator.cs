@@ -43,30 +43,48 @@ public sealed class WeightsFitnessEvaluator
         Func<IBotStrategy> baselineFactory,
         double difficultyMultiplier)
     {
-        double fitness = 0;
+        double candidateRedFitness = 0;
+        double candidateGreenFitness = 0;
 
         Parallel.For(
             fromInclusive: 0,
             toExclusive: gamesPerGenome,
-            localInit: static () => new ThreadLocalSimulationState(new GameSimulator()),
+            localInit: () => new ThreadLocalSimulationState(
+                new GameSimulator(),
+                CreateHardBot(weights),
+                baselineFactory()),
             body: (gameIndex, _, localState) =>
             {
                 bool candidateStarts = gameIndex % 2 == 0;
-                var candidateBot = CreateHardBot(weights);
-                var baselineBot = baselineFactory();
 
                 var result = candidateStarts
-                    ? localState.Simulator.PlayGame(candidateBot, baselineBot, _settings.MaxTurnsPerGame)
-                    : localState.Simulator.PlayGame(baselineBot, candidateBot, _settings.MaxTurnsPerGame);
+                    ? localState.Simulator.PlayGame(
+                        localState.CandidateBot,
+                        localState.BaselineBot,
+                        _settings.MaxTurnsPerGame)
+                    : localState.Simulator.PlayGame(
+                        localState.BaselineBot,
+                        localState.CandidateBot,
+                        _settings.MaxTurnsPerGame);
 
                 var candidateColor = candidateStarts ? PlayerColor.Red : PlayerColor.Green;
-                localState.Fitness += ScoreResult(result, candidateColor, difficultyMultiplier);
+                var score = ScoreResult(result, candidateColor, difficultyMultiplier);
+
+                if (candidateColor == PlayerColor.Red)
+                    localState.CandidateRedFitness += score;
+                else
+                    localState.CandidateGreenFitness += score;
 
                 return localState;
             },
-            localFinally: localState => AddThreadLocalFitness(ref fitness, localState.Fitness));
+            localFinally: localState =>
+            {
+                AddThreadLocalFitness(ref candidateRedFitness, localState.CandidateRedFitness);
+                AddThreadLocalFitness(ref candidateGreenFitness, localState.CandidateGreenFitness);
+            });
 
-        return fitness;
+        var candidateGamesPerColor = Math.Max(1.0, gamesPerGenome / 2.0);
+        return Math.Min(candidateRedFitness, candidateGreenFitness) / candidateGamesPerColor;
     }
 
     private static HardBotStrategy CreateHardBot(EvaluationWeights weights)
@@ -107,10 +125,19 @@ public sealed class WeightsFitnessEvaluator
         while (Interlocked.CompareExchange(ref totalFitness, updatedTotal, currentTotal) != currentTotal);
     }
 
-    private sealed class ThreadLocalSimulationState(GameSimulator simulator)
+    private sealed class ThreadLocalSimulationState(
+        GameSimulator simulator,
+        IBotStrategy candidateBot,
+        IBotStrategy baselineBot)
     {
         public GameSimulator Simulator { get; } = simulator;
 
-        public double Fitness { get; set; }
+        public IBotStrategy CandidateBot { get; } = candidateBot;
+
+        public IBotStrategy BaselineBot { get; } = baselineBot;
+
+        public double CandidateRedFitness { get; set; }
+
+        public double CandidateGreenFitness { get; set; }
     }
 }

@@ -32,6 +32,24 @@ public class ExceptionHandlingMiddleware
                 HttpStatusCode.BadRequest,
                 ex.Message);
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Requested resource was not found.");
+
+            await WriteResponseAsync(
+                context,
+                HttpStatusCode.NotFound,
+                ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Forbidden operation.");
+
+            await WriteResponseAsync(
+                context,
+                HttpStatusCode.Forbidden,
+                ex.Message);
+        }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Invalid operation.");

@@ -7,11 +7,11 @@ using GeneticSharp;
 var settings = new TrainingSettings
 {
     EasyGamesPerGenome = 4,
-    MediumGamesPerGenome = 26,
+    MediumGamesPerGenome = 16,
     MaxTurnsPerGame = 200,
-    Generations = 200,
-    PopulationMinSize = 50,
-    PopulationMaxSize = 100
+    Generations = 300,
+    PopulationMinSize = 40,
+    PopulationMaxSize = 80
 
 
 
@@ -35,9 +35,9 @@ var ga = new GeneticAlgorithm(
     new UniformCrossover(),
     new SimpleHybridMutation());
 
-const float baseMutationProbability = 0.12f;
-const float mediumMutationProbability = 0.25f;
-const float highMutationProbability = 0.45f;
+const float baseMutationProbability = 0.10f;
+const float mediumMutationProbability = 0.20f;
+const float highMutationProbability = 0.30f;
 const double improvementEpsilon = 0.01;
 
 double bestFitnessSoFar = double.MinValue;
@@ -115,6 +115,7 @@ var profile = new TrainingRunProfile(
     BestGeneration: bestGeneration,
     FinalGeneration: ga.GenerationsNumber,
     FinalGenerationBestFitness: finalGenerationBest.Fitness.GetValueOrDefault(),
+    FitnessAggregation: "Per matchup: Min(candidate red score, candidate green score) / candidate games per color",
     Settings: settings,
     MutationSettings: new MutationSettingsProfile(
         baseMutationProbability,

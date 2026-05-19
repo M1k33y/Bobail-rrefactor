@@ -2,6 +2,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+namespace Bobail.Infrastructure.Persistance;
+
 public static class GameSerializer
 {
     private static readonly JsonSerializerOptions Options = new()
@@ -24,7 +26,7 @@ public static class GameSerializer
         var game = JsonSerializer.Deserialize<Game>(json, Options);
 
         if (game == null)
-            throw new Exception("Failed to deserialize game.");
+            throw new InvalidOperationException("Failed to deserialize game.");
 
         return game;
     }

@@ -1,4 +1,5 @@
-﻿using FluentValidation.TestHelper;
+using Bobail.Application.Validators;
+using FluentValidation.TestHelper;
 
 namespace Bobail.Application.Tests.Validators
 {
@@ -9,7 +10,7 @@ namespace Bobail.Application.Tests.Validators
         [Fact]
         public void Should_Fail_When_Email_Invalid()
         {
-            var result = _validator.TestValidate((Email:"invalid",Password:"StrongPass1"));
+            var result = _validator.TestValidate((Email: "invalid", Password: "StrongPass1"));
 
             result.ShouldHaveValidationErrorFor(x => x.Email);
         }
@@ -17,7 +18,7 @@ namespace Bobail.Application.Tests.Validators
         [Fact]
         public void Should_Fail_When_Password_Empty()
         {
-            var result = _validator.TestValidate((Email:"test@mail.com",Password: ""));
+            var result = _validator.TestValidate((Email: "test@mail.com", Password: ""));
 
             result.ShouldHaveValidationErrorFor(x => x.Password);
         }

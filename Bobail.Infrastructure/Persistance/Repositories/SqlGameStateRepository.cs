@@ -1,6 +1,7 @@
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.DTOs;
 using Bobail.Domain.Games;
+using Bobail.Infrastructure.Persistance;
 using Bobail.Infrastructure.Persistance.Entities;
 using Bobail.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
