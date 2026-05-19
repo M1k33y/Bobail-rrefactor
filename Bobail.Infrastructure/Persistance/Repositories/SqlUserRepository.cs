@@ -4,6 +4,8 @@ using Bobail.Infrastructure.Persistance.Entities;
 using Bobail.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
+namespace Bobail.Infrastructure.Persistance.Repositories;
+
 public class SqlUserRepository : IUserRepository
 {
     private readonly GameDbContext _context;

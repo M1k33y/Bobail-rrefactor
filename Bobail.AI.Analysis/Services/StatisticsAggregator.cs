@@ -55,17 +55,6 @@ public sealed class StatisticsAggregator
             StatisticallySignificant: pValue < 0.05);
     }
 
-    public IReadOnlyDictionary<string, List<int>> BuildWinningTurnDistributions(IEnumerable<MatchGameResult> results)
-    {
-        return results
-            .Where(result => result.Winner is not null)
-            .GroupBy(result => result.Winner!, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                group => group.Key,
-                group => group.Select(result => result.Turns).ToList(),
-                StringComparer.OrdinalIgnoreCase);
-    }
-
     private static double CalculateOneSidedPValue(double observedWins, int trials)
     {
         double expectedWins = trials * 0.5;

@@ -84,7 +84,9 @@ public static class GameRules
 
     public static void ApplyPlayerMove(Game game, Position from, Position to)
     {
-        var piece = game.Board.GetPieceAt(from);
+        var piece = game.Board.GetPieceAt(from)
+            ?? throw new DomainException("No piece at source position.");
+
         //Console.WriteLine(piece == null ? "PIECE NOT FOUND" : "PIECE FOUND");
         //Console.WriteLine($"Moving piece from {from.Row},{from.Column} to {to.Row},{to.Column}");
         game.Board.MovePiece(piece, to);

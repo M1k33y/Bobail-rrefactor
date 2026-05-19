@@ -1,5 +1,6 @@
 using Bobail.Application.DTOs;
 using Bobail.Application.Interfaces.Repositories;
+using Bobail.Infrastructure.Persistance;
 using Bobail.Infrastructure.Persistence;
 using Bobail.Infrastructure.Persistance.Entities;
 using Microsoft.EntityFrameworkCore;

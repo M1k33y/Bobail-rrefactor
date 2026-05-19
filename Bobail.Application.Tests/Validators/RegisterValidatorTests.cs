@@ -1,3 +1,4 @@
+using Bobail.Application.Validators;
 using FluentValidation.TestHelper;
 
 namespace Bobail.Application.Tests.Validators

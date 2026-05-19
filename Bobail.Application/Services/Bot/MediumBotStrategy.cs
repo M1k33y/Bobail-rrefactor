@@ -44,8 +44,6 @@ public class MediumBotStrategy : IBotStrategy
     {
         _logger.LogInformation("Medium AI started calculation. Depth: {Depth}", MaxDepth);
 
-        _transpositionTable.Clear();
-
         var rootCandidates = PrepareRootMoveCandidates(game, game.CurrentTurn);
 
         if (rootCandidates.Count == 0)

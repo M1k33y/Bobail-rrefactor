@@ -1,8 +1,11 @@
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Domain.Common;
 using Bobail.Domain.Games;
+using Bobail.Infrastructure.Persistance.Entities;
 using Bobail.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+
+namespace Bobail.Infrastructure.Persistance.Repositories;
 
 public class SqlGamePlayerRepository : IGamePlayerRepository
 {

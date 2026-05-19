@@ -33,23 +33,12 @@ public class AdminController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var currentAdminId = User.GetUserId();
-            var user = await _adminService.ToggleUserActiveAsync(
-                id,
-                currentAdminId,
-                cancellationToken);
+        var currentAdminId = User.GetUserId();
+        var user = await _adminService.ToggleUserActiveAsync(
+            id,
+            currentAdminId,
+            cancellationToken);
 
-            return Ok(user);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { error = ex.Message });
-        }
+        return Ok(user);
     }
 }

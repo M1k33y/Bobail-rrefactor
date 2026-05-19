@@ -12,34 +12,6 @@ public sealed class GraphGenerator
         ["Hard"] = Colors.Crimson
     };
 
-    public void SaveWinningTurnDistribution(string outputPath, IReadOnlyDictionary<string, List<int>> turnDistributions)
-    {
-        var plot = new Plot();
-
-        foreach (var pair in turnDistributions.OrderBy(x => BotSortKey(x.Key)))
-        {
-            if (pair.Value.Count == 0)
-                continue;
-
-            double[] turns = pair.Value.Select(static x => (double)x).ToArray();
-            int minTurn = pair.Value.Min();
-            int maxTurn = pair.Value.Max();
-            int binCount = Math.Max(6, Math.Min(20, maxTurn - minTurn + 1));
-
-            var histogram = ScottPlot.Statistics.Histogram.WithBinCount(binCount, turns);
-            var scatter = plot.Add.Scatter(histogram.Bins, histogram.Counts);
-            scatter.LegendText = $"{pair.Key} wins";
-            scatter.Color = ResolveColor(pair.Key);
-            scatter.LineWidth = 2;
-        }
-
-        plot.Title("Bobail Winning Turn Distribution");
-        plot.XLabel("Turns");
-        plot.YLabel("Frequency");
-        plot.ShowLegend();
-        plot.SavePng(outputPath, 1200, 800);
-    }
-
     public void SaveWinrateComparison(string outputPath, IReadOnlyList<MatchupSummary> summaries)
     {
         var plot = new Plot();
@@ -81,17 +53,5 @@ public sealed class GraphGenerator
         return BotColors.TryGetValue(botName, out var color)
             ? color
             : Colors.SlateGray;
-    }
-
-    private static int BotSortKey(string botName)
-    {
-        return botName switch
-        {
-            var name when name.Contains("Easy", StringComparison.OrdinalIgnoreCase) => 0,
-            var name when name.Contains("Medium", StringComparison.OrdinalIgnoreCase) => 1,
-            var name when name.Contains("Hard", StringComparison.OrdinalIgnoreCase) => 2,
-            var name when name.Contains("GA", StringComparison.OrdinalIgnoreCase) => 3,
-            _ => int.MaxValue
-        };
     }
 }

@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+using FluentValidation;
+
+namespace Bobail.Application.Validators;
 
 public class LoginValidator : AbstractValidator<(string Email, string Password)>
 {

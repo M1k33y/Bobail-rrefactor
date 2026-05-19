@@ -1,8 +1,8 @@
-﻿using Bobail.Domain.Board;
+using Bobail.Domain.Board;
 using Bobail.Domain.Common;
 using Bobail.Domain.Games;
-using Bobail.Domain.Pieces;
-using System.Text.Json.Serialization;
+
+namespace Bobail.Domain.Pieces;
 
 public class Piece : Entity
 {
@@ -27,7 +27,6 @@ public class Piece : Entity
         Owner = owner;
     }
 
-    
     public void MoveTo(Position newPosition)
     {
         Position = newPosition;

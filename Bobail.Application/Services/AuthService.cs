@@ -2,6 +2,8 @@ using BCrypt.Net;
 using Bobail.Application.DTOs;
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
+using Bobail.Application.Validators;
+using Bobail.Domain.Common;
 using Bobail.Domain.Users;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +13,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+
+namespace Bobail.Application.Services;
 
 public class AuthService : IAuthService
 {
@@ -42,14 +46,14 @@ public class AuthService : IAuthService
 
     public async Task<RegisterResponse> RegisterAsync(string email, string password, string nickname)
     {
-        email = email.Trim().ToLower();
+        email = NormalizeEmail(email);
         var existing = await _userRepository.GetByEmailAsync(email);
         if (existing != null)
-            throw new Exception("Email already exists");
+            throw new DomainException("Email already exists");
 
         var result = _registerValidator.Validate((email, password, nickname));
         if (!result.IsValid)
-            throw new Exception(result.Errors.First().ErrorMessage);
+            throw new DomainException(result.Errors.First().ErrorMessage);
 
         var user = new User
         {
@@ -75,34 +79,34 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse> LoginAsync(string email, string password, bool rememberMe)
     {
-        email = email.Trim().ToLower();
+        email = NormalizeEmail(email);
         var result = _loginValidator.Validate((email, password));
         if (!result.IsValid)
-            throw new Exception(result.Errors.First().ErrorMessage);
+            throw new DomainException(result.Errors.First().ErrorMessage);
 
         var user = await _userRepository.GetByEmailAsync(email);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-            throw new Exception("Invalid credentials");
+            throw new DomainException("Invalid credentials");
 
         if (!user.IsActive)
-            throw new Exception("This user is currently banned.");
+            throw new DomainException("This user is currently banned.");
 
         if (!user.IsEmailVerified)
-            throw new Exception("Please verify your email before logging in");
+            throw new DomainException("Please verify your email before logging in");
 
         return GenerateJwt(user, rememberMe);
     }
 
     public async Task<ForgotPasswordResponse> RequestPasswordResetAsync(string email)
     {
-        email = email.Trim().ToLower();
+        email = NormalizeEmail(email);
 
         if (string.IsNullOrWhiteSpace(email))
-            throw new Exception("Email required");
+            throw new DomainException("Email required");
 
         if (!new EmailAddressAttribute().IsValid(email))
-            throw new Exception("Invalid email");
+            throw new DomainException("Invalid email");
 
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null || !user.IsActive || !user.IsEmailVerified)
@@ -142,7 +146,7 @@ public class AuthService : IAuthService
     public async Task ResetPasswordAsync(string token, string newPassword)
     {
         if (string.IsNullOrWhiteSpace(token))
-            throw new Exception("Reset token required");
+            throw new DomainException("Reset token required");
 
         ValidatePassword(newPassword);
 
@@ -150,11 +154,11 @@ public class AuthService : IAuthService
         var resetToken = await _passwordResetTokenRepository.GetByTokenHashAsync(tokenHash);
 
         if (resetToken == null || resetToken.Used || resetToken.ExpiresAtUtc < DateTime.UtcNow)
-            throw new Exception("Reset token is invalid or expired");
+            throw new DomainException("Reset token is invalid or expired");
 
         var user = await _userRepository.GetByIdAsync(resetToken.UserId);
         if (user == null)
-            throw new Exception("Reset token is invalid or expired");
+            throw new DomainException("Reset token is invalid or expired");
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
 
@@ -166,17 +170,17 @@ public class AuthService : IAuthService
     public async Task VerifyEmailAsync(string token)
     {
         if (string.IsNullOrWhiteSpace(token))
-            throw new Exception("Verification token required");
+            throw new DomainException("Verification token required");
 
         var tokenHash = HashToken(token.Trim());
         var verificationToken = await _emailVerificationTokenRepository.GetByTokenHashAsync(tokenHash);
 
         if (verificationToken == null || verificationToken.ExpiresAtUtc < DateTime.UtcNow)
-            throw new Exception("Verification token is invalid or expired");
+            throw new DomainException("Verification token is invalid or expired");
 
         var user = await _userRepository.GetByIdAsync(verificationToken.UserId);
         if (user == null)
-            throw new Exception("Verification token is invalid or expired");
+            throw new DomainException("Verification token is invalid or expired");
 
         user.IsEmailVerified = true;
         user.EmailVerifiedAtUtc = DateTime.UtcNow;
@@ -187,13 +191,13 @@ public class AuthService : IAuthService
 
     public async Task ResendVerificationEmailAsync(string email)
     {
-        email = email.Trim().ToLower();
+        email = NormalizeEmail(email);
 
         if (string.IsNullOrWhiteSpace(email))
-            throw new Exception("Email required");
+            throw new DomainException("Email required");
 
         if (!new EmailAddressAttribute().IsValid(email))
-            throw new Exception("Invalid email");
+            throw new DomainException("Invalid email");
 
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null || !user.IsActive || user.IsEmailVerified)
@@ -207,7 +211,7 @@ public class AuthService : IAuthService
         var expiresAtUtc = rememberMe
             ? DateTime.UtcNow.AddDays(30)
             : DateTime.UtcNow.AddHours(3);
-        var jwtKey = _config["Jwt:Key"] ?? throw new Exception("JWT key is missing");
+        var jwtKey = _config["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is missing");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -283,9 +287,17 @@ public class AuthService : IAuthService
     private static void ValidatePassword(string password)
     {
         if (string.IsNullOrWhiteSpace(password))
-            throw new Exception("Password required");
+            throw new DomainException("Password required");
 
         if (!PasswordPolicy.IsValid(password))
-            throw new Exception(PasswordPolicy.PasswordRequirementsMessage);
+            throw new DomainException(PasswordPolicy.PasswordRequirementsMessage);
+    }
+
+    private static string NormalizeEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new DomainException("Email required");
+
+        return email.Trim().ToLowerInvariant();
     }
 }

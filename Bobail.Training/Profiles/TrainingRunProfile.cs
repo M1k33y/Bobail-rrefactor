@@ -11,6 +11,7 @@ public sealed record TrainingRunProfile(
     int BestGeneration,
     int FinalGeneration,
     double FinalGenerationBestFitness,
+    string FitnessAggregation,
     TrainingSettings Settings,
     MutationSettingsProfile MutationSettings,
     IReadOnlyList<GeneRangeProfile> GeneRanges,

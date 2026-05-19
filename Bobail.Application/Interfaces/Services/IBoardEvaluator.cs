@@ -1,4 +1,6 @@
-﻿using Bobail.Domain.Games;
+using Bobail.Domain.Games;
+
+namespace Bobail.Application.Interfaces.Services;
 
 public interface IBoardEvaluator
 {

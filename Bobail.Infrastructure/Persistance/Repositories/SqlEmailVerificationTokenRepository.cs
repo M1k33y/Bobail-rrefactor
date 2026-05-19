@@ -3,6 +3,9 @@ using Bobail.Domain.Users;
 using Bobail.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Bobail.Infrastructure.Persistance.Entities;
+
+namespace Bobail.Infrastructure.Persistance.Repositories;
+
 public class SqlEmailVerificationTokenRepository : IEmailVerificationTokenRepository
 {
     private readonly GameDbContext _context;
