@@ -29,13 +29,13 @@ public sealed class EvaluationWeightsChromosome : ChromosomeBase
         (1000, 24_000),// ImmediateWinThreatWeight
         (4000, 30_000),// ImmediateLossThreatWeight
         (40, 1400),      // BobailMobilityWeight
-        (100, 1200),     // ForwardMobilityWeight
+        (100, 3000),     // ForwardMobilityWeight
         (200, 2000),   // TrapRiskWeight
         (0, 500),      // OpponentPressureWeight
-        (0, 1200),      // FriendlySupportWeight
+        (0, 3000),      // FriendlySupportWeight
         (1, 900),       // DestinationQualityWeight
         (40, 1000),      // CenterControlWeight
-        (40, 2500),      // BehindBobailFormationWeight
+        (40, 5000),      // BehindBobailFormationWeight
         (40, 900)       // TokenDevelopmentWeight
     };
 

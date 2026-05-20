@@ -12,6 +12,10 @@ public sealed class WeightsFitnessEvaluator
 {
     private readonly TrainingSettings _settings;
     private readonly EvaluationWeights _baselineWeights = new();
+    private readonly ParallelOptions _parallelOptions = new()
+    {
+        MaxDegreeOfParallelism = Environment.ProcessorCount
+    };
 
     public WeightsFitnessEvaluator(TrainingSettings settings)
     {
@@ -49,6 +53,7 @@ public sealed class WeightsFitnessEvaluator
         Parallel.For(
             fromInclusive: 0,
             toExclusive: gamesPerGenome,
+            parallelOptions: _parallelOptions,
             localInit: () => new ThreadLocalSimulationState(
                 new GameSimulator(),
                 CreateHardBot(weights),

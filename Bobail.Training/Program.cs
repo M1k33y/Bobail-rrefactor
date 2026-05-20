@@ -6,12 +6,12 @@ using GeneticSharp;
 
 var settings = new TrainingSettings
 {
-    EasyGamesPerGenome = 4,
-    MediumGamesPerGenome = 16,
+    EasyGamesPerGenome = 6,
+    MediumGamesPerGenome = 34,
     MaxTurnsPerGame = 200,
-    Generations = 300,
-    PopulationMinSize = 40,
-    PopulationMaxSize = 80
+    Generations = 70,
+    PopulationMinSize = 50,
+    PopulationMaxSize = 70
 
 
 
@@ -31,14 +31,16 @@ var fitness = new EvaluationWeightsFitness(fitnessEvaluator);
 var ga = new GeneticAlgorithm(
     population,
     fitness,
-    new NonLinearRankSelection(rankDecay: 0.99),
-    new UniformCrossover(),
+    new NonLinearRankSelection(rankDecay: 0.97),
+    new ArithmeticWeightsCrossover(),
     new SimpleHybridMutation());
 
 const float baseMutationProbability = 0.10f;
-const float mediumMutationProbability = 0.20f;
-const float highMutationProbability = 0.30f;
+const float mediumMutationProbability = 0.15f;
+const float highMutationProbability = 0.25f;
 const double improvementEpsilon = 0.01;
+const int randomImmigrantStagnationThreshold = 15;
+const double randomImmigrantFraction = 0.10;
 
 double bestFitnessSoFar = double.MinValue;
 double lastMeaningfulImprovementFitness = double.MinValue;
@@ -54,7 +56,6 @@ var generationTimer = System.Diagnostics.Stopwatch.StartNew();
 ga.GenerationRan += (_, _) =>
 {
     var generationElapsed = generationTimer.Elapsed;
-    generationTimer.Restart();
 
     if (ga.BestChromosome is EvaluationWeightsChromosome bestChromosome)
     {
@@ -79,15 +80,22 @@ ga.GenerationRan += (_, _) =>
 
         ga.MutationProbability = stagnantGenerations switch
         {
-            >= 8 => highMutationProbability,
-            >= 3 => mediumMutationProbability,
+            >= 15 => highMutationProbability,
+            >= 8 => mediumMutationProbability,
             _ => baseMutationProbability
         };
 
+        var immigrantsInjected = stagnantGenerations >= randomImmigrantStagnationThreshold
+            ? InjectRandomImmigrants(population, fitness, randomImmigrantFraction)
+            : 0;
+
         Console.WriteLine(
-            $"Generation {ga.GenerationsNumber}: time={generationElapsed:mm\\:ss}, generationBest={bestChromosome.Fitness:F2}, globalBest={bestFitnessSoFar:F2}, stagnant={stagnantGenerations}, mutation={ga.MutationProbability:F2}, weights={bestChromosome.ToWeights()}");
+            $"Generation {ga.GenerationsNumber}: time={generationElapsed:mm\\:ss}, generationBest={bestChromosome.Fitness:F2}, globalBest={bestFitnessSoFar:F2}, stagnant={stagnantGenerations}, mutation={ga.MutationProbability:F2}, immigrants={immigrantsInjected}");
+        Console.WriteLine($" weights={bestChromosome.ToWeights()}");
         Console.WriteLine();
     }
+
+    generationTimer.Restart();
 };
 
 Console.WriteLine("Starting Bobail weight optimization...");
@@ -134,3 +142,33 @@ var profilePath = TrainingProfileWriter.Save(
     Path.Combine(trainingProjectDirectory, "training-output"));
 
 Console.WriteLine($"Saved best profile: {profilePath}");
+
+static int InjectRandomImmigrants(
+    Population population,
+    IFitness fitness,
+    double immigrantFraction)
+{
+    var chromosomes = population.CurrentGeneration.Chromosomes;
+
+    if (chromosomes.Count <= 1)
+        return 0;
+
+    var immigrantCount = Math.Max(1, (int)Math.Round(chromosomes.Count * immigrantFraction));
+    immigrantCount = Math.Min(immigrantCount, chromosomes.Count - 1);
+
+    var replacementIndexes = chromosomes
+        .Select((chromosome, index) => new { Chromosome = chromosome, Index = index })
+        .OrderBy(item => item.Chromosome.Fitness ?? double.MinValue)
+        .Take(immigrantCount)
+        .Select(item => item.Index)
+        .ToList();
+
+    foreach (var index in replacementIndexes)
+    {
+        var immigrant = chromosomes[index].CreateNew();
+        immigrant.Fitness = fitness.Evaluate(immigrant);
+        chromosomes[index] = immigrant;
+    }
+
+    return replacementIndexes.Count;
+}
