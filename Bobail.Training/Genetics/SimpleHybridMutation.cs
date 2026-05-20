@@ -4,7 +4,7 @@ namespace Bobail.Training.Genetics;
 
 public sealed class SimpleHybridMutation : MutationBase
 {
-    private const double ResetChance = 0.15;
+    private const double ResetChance = 0.05;
     private const double MinStepPercent = 0.05;
     private const double MaxStepPercent = 0.20;
 
