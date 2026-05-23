@@ -1,0 +1,4 @@
+﻿MatchupName,BotAName,BotBName,LeaderName,TotalGames,BotAWins,BotBWins,Draws,BotAWinrate,BotBWinrate,LeaderWinrate,BotAStartedGames,BotAStartedWins,BotBStartedGames,BotBStartedWins,BotAStartedWinrate,BotBStartedWinrate,AverageTurns,MinTurns,MaxTurns,OneSidedLeaderPValue,StatisticallySignificant
+Hard_Default vs bot2,Hard_Default,bot2,Tie,300,150,150,0,50.0000,50.0000,0.0000,150,150,150,150,100.0000,100.0000,38.0000,28,48,1.000000,False
+Hard_Default vs bot3,Hard_Default,bot3,Tie,300,150,150,0,50.0000,50.0000,0.0000,150,150,150,150,100.0000,100.0000,39.0000,30,48,1.000000,False
+bot2 vs bot3,bot2,bot3,Tie,300,150,150,0,50.0000,50.0000,0.0000,150,150,150,150,100.0000,100.0000,34.0000,34,34,1.000000,False

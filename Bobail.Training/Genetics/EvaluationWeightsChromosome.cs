@@ -24,19 +24,19 @@ public sealed class EvaluationWeightsChromosome : ChromosomeBase
 
     private static readonly (int Min, int Max)[] GeneRanges =
     {
-        (100, 1500),     // ProgressWeight
-        (0, 1200),     // PathToGoalWeight
-        (1000, 24_000),// ImmediateWinThreatWeight
-        (4000, 30_000),// ImmediateLossThreatWeight
-        (40, 1400),      // BobailMobilityWeight
-        (100, 3000),     // ForwardMobilityWeight
-        (200, 2000),   // TrapRiskWeight
-        (0, 500),      // OpponentPressureWeight
-        (0, 3000),      // FriendlySupportWeight
-        (1, 900),       // DestinationQualityWeight
+        (500, 2200),     // ProgressWeight
+        (100, 900),     // PathToGoalWeight
+        (6000, 24_000),// ImmediateWinThreatWeight
+        (8000, 30_000),// ImmediateLossThreatWeight
+        (300, 1400),      // BobailMobilityWeight
+        (800, 2800),     // ForwardMobilityWeight
+        (200, 2400),   // TrapRiskWeight
+        (150, 800),      // OpponentPressureWeight
+        (700, 3000),      // FriendlySupportWeight
+        (1, 700),       // DestinationQualityWeight
         (40, 1000),      // CenterControlWeight
-        (40, 5000),      // BehindBobailFormationWeight
-        (40, 900)       // TokenDevelopmentWeight
+        (1000, 5000),      // BehindBobailFormationWeight
+        (40, 650)       // TokenDevelopmentWeight
     };
 
     public EvaluationWeightsChromosome() : base(GeneRanges.Length)
