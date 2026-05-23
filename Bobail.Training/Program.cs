@@ -6,12 +6,12 @@ using GeneticSharp;
 
 var settings = new TrainingSettings
 {
-    EasyGamesPerGenome = 6,
-    MediumGamesPerGenome = 34,
+    EasyGamesPerGenome = 4,
+    MediumGamesPerGenome = 26,
     MaxTurnsPerGame = 200,
-    Generations = 70,
+    Generations = 200,
     PopulationMinSize = 50,
-    PopulationMaxSize = 70
+    PopulationMaxSize = 80
 
 
 
@@ -31,16 +31,18 @@ var fitness = new EvaluationWeightsFitness(fitnessEvaluator);
 var ga = new GeneticAlgorithm(
     population,
     fitness,
-    new NonLinearRankSelection(rankDecay: 0.97),
+    new NonLinearRankSelection(rankDecay: 0.94),
     new ArithmeticWeightsCrossover(),
     new SimpleHybridMutation());
 
+ga.Reinsertion = new ElitistReinsertion();
+
 const float baseMutationProbability = 0.10f;
-const float mediumMutationProbability = 0.15f;
-const float highMutationProbability = 0.25f;
+const float mediumMutationProbability = 0.2f;
+const float highMutationProbability = 0.3f;
 const double improvementEpsilon = 0.01;
-const int randomImmigrantStagnationThreshold = 15;
-const double randomImmigrantFraction = 0.10;
+const int randomImmigrantStagnationThreshold = 10;
+const double randomImmigrantFraction = 0.15;
 
 double bestFitnessSoFar = double.MinValue;
 double lastMeaningfulImprovementFitness = double.MinValue;
@@ -80,8 +82,8 @@ ga.GenerationRan += (_, _) =>
 
         ga.MutationProbability = stagnantGenerations switch
         {
-            >= 15 => highMutationProbability,
-            >= 8 => mediumMutationProbability,
+            >= 10 => highMutationProbability,
+            >= 5 => mediumMutationProbability,
             _ => baseMutationProbability
         };
 
