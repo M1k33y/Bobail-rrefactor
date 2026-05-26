@@ -42,13 +42,25 @@ export const adminApi = {
     return res.json();
   },
 
-  toggleUserActive: async (userId) => {
-    const res = await authFetch(`${API}/users/${userId}/toggle-active`, {
+  banUser: async (userId) => {
+    const res = await authFetch(`${API}/users/${userId}/ban`, {
       method: "PATCH",
     });
 
     if (!res.ok) {
-      throw new Error(await readApiError(res, "Failed to update user."));
+      throw new Error(await readApiError(res, "Failed to ban user."));
+    }
+
+    return res.json();
+  },
+
+  unbanUser: async (userId) => {
+    const res = await authFetch(`${API}/users/${userId}/unban`, {
+      method: "PATCH",
+    });
+
+    if (!res.ok) {
+      throw new Error(await readApiError(res, "Failed to unban user."));
     }
 
     return res.json();

@@ -67,7 +67,7 @@ public sealed class CsvExporter
     {
         var lines = new List<string>
         {
-            "Profile," + string.Join(",", profiles.Select(profile => Escape(profile.Name)))
+            "Bot \\ Opponent (win-rate %)," + string.Join(",", profiles.Select(profile => Escape(profile.Name)))
         };
 
         foreach (var rowProfile in profiles)
@@ -78,31 +78,74 @@ public sealed class CsvExporter
             {
                 if (rowProfile.Name == columnProfile.Name)
                 {
-                    values.Add("-");
+                    values.Add("self");
                     continue;
                 }
 
-                var summary = summaries.FirstOrDefault(item =>
-                    NamesEqual(item.BotAName, rowProfile.Name) &&
-                    NamesEqual(item.BotBName, columnProfile.Name));
-
-                if (summary is not null)
-                {
-                    values.Add(summary.BotAWinrate.ToString("F2", CultureInfo.InvariantCulture));
-                    continue;
-                }
-
-                summary = summaries.FirstOrDefault(item =>
-                    NamesEqual(item.BotAName, columnProfile.Name) &&
-                    NamesEqual(item.BotBName, rowProfile.Name));
-
-                values.Add(summary is null
+                var winrate = AnalysisTableBuilder.GetWinrate(rowProfile.Name, columnProfile.Name, summaries);
+                values.Add(winrate is null
                     ? string.Empty
-                    : summary.BotBWinrate.ToString("F2", CultureInfo.InvariantCulture));
+                    : winrate.Value.ToString("F2", CultureInfo.InvariantCulture));
             }
 
             lines.Add(string.Join(",", values));
         }
+
+        File.WriteAllLines(outputPath, lines, Encoding.UTF8);
+    }
+
+    public void ExportAverageTurnsMatrix(
+        string outputPath,
+        IReadOnlyList<BotProfile> profiles,
+        IReadOnlyCollection<MatchupSummary> summaries)
+    {
+        var lines = new List<string>
+        {
+            "Bot \\ Opponent (average turns)," + string.Join(",", profiles.Select(profile => Escape(profile.Name)))
+        };
+
+        foreach (var rowProfile in profiles)
+        {
+            var values = new List<string> { Escape(rowProfile.Name) };
+
+            foreach (var columnProfile in profiles)
+            {
+                if (rowProfile.Name == columnProfile.Name)
+                {
+                    values.Add("self");
+                    continue;
+                }
+
+                var averageTurns = AnalysisTableBuilder.GetAverageTurns(rowProfile.Name, columnProfile.Name, summaries);
+                values.Add(averageTurns is null
+                    ? string.Empty
+                    : averageTurns.Value.ToString("F2", CultureInfo.InvariantCulture));
+            }
+
+            lines.Add(string.Join(",", values));
+        }
+
+        File.WriteAllLines(outputPath, lines, Encoding.UTF8);
+    }
+
+    public void ExportOverallRanking(string outputPath, IReadOnlyCollection<BotRankingRow> ranking)
+    {
+        var lines = new List<string>
+        {
+            "Rank,BotName,Score,Winrate,Wins,Losses,Draws,TotalGames,AverageTurns"
+        };
+
+        lines.AddRange(ranking.Select(row =>
+            string.Join(",",
+                row.Rank.ToString(CultureInfo.InvariantCulture),
+                Escape(row.BotName),
+                row.Score.ToString("F2", CultureInfo.InvariantCulture),
+                row.Winrate.ToString("F2", CultureInfo.InvariantCulture),
+                row.Wins.ToString(CultureInfo.InvariantCulture),
+                row.Losses.ToString(CultureInfo.InvariantCulture),
+                row.Draws.ToString(CultureInfo.InvariantCulture),
+                row.TotalGames.ToString(CultureInfo.InvariantCulture),
+                row.AverageTurns.ToString("F2", CultureInfo.InvariantCulture))));
 
         File.WriteAllLines(outputPath, lines, Encoding.UTF8);
     }
@@ -115,8 +158,4 @@ public sealed class CsvExporter
         return $"\"{value.Replace("\"", "\"\"")}\"";
     }
 
-    private static bool NamesEqual(string left, string right)
-    {
-        return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
-    }
 }

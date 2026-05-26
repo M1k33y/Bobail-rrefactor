@@ -102,6 +102,27 @@ public class SqlGamePlayerRepository : IGamePlayerRepository
             cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Guid>> GetActiveOnlineGameIdsForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var activeStatuses = new[]
+        {
+            (int)GameStatus.WaitingForPlayers,
+            (int)GameStatus.InProgress
+        };
+
+        return await _context.GamePlayers
+            .Where(x =>
+                x.UserId == userId &&
+                x.Game.Mode == (int)GameMode.OnlineMultiplayer &&
+                activeStatuses.Contains(x.Game.Status))
+            .OrderBy(x => x.Game.CreatedAt)
+            .Select(x => x.GameId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<PlayerColor?> GetPlayerColorAsync(
         Guid gameId,
         Guid userId,

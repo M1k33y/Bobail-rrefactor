@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { HubConnectionState } from "@microsoft/signalr";
 import { gameApi } from "../api/gameApi";
 import { createGameHubConnection } from "../api/gameHub";
+import { clearStoredToken } from "../../auth/utils/authStorage";
 
 function mergeGameState(nextGame, previousGame) {
   if (!nextGame) {
@@ -78,6 +79,10 @@ export function useGame(gameId) {
     connection.on("PlayerJoined", applyRemoteState);
     connection.on("MovePlayed", (result) => applyRemoteState(result.game));
     connection.on("GameEnded", applyRemoteState);
+    connection.on("ForceLogout", () => {
+      clearStoredToken();
+      window.location.assign("/login");
+    });
     connection.on("MoveRejected", (error) => {
       setOnlineError(error?.message || "Move rejected.");
       clearSelection();

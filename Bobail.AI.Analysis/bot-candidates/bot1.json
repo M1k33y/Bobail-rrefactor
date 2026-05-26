@@ -1,0 +1,105 @@
+{
+  "name": "bot1", 
+  "difficulty": "Hard",
+  "createdAtUtc": "2026-05-19T08:54:18.5055693Z",
+  "bestFitness": 2869.051423486907,
+  "bestGeneration": 181,
+  "finalGeneration": 200,
+  "finalGenerationBestFitness": 2605.9956709956705,
+  "settings": {
+    "easyGamesPerGenome": 4,
+    "mediumGamesPerGenome": 26,
+    "maxTurnsPerGame": 200,
+    "generations": 200,
+    "populationMinSize": 50,
+    "populationMaxSize": 100
+  },
+  "mutationSettings": {
+    "baseMutationProbability": 0.1,
+    "mediumMutationProbability": 0.2,
+    "highMutationProbability": 0.3,
+    "improvementEpsilon": 0.01
+  },
+  "geneRanges": [
+    {
+      "name": "ProgressWeight",
+      "min": 100,
+      "max": 1500
+    },
+    {
+      "name": "PathToGoalWeight",
+      "min": 0,
+      "max": 1200
+    },
+    {
+      "name": "ImmediateWinThreatWeight",
+      "min": 1000,
+      "max": 24000
+    },
+    {
+      "name": "ImmediateLossThreatWeight",
+      "min": 4000,
+      "max": 30000
+    },
+    {
+      "name": "BobailMobilityWeight",
+      "min": 40,
+      "max": 1400
+    },
+    {
+      "name": "ForwardMobilityWeight",
+      "min": 100,
+      "max": 1200
+    },
+    {
+      "name": "TrapRiskWeight",
+      "min": 200,
+      "max": 2000
+    },
+    {
+      "name": "OpponentPressureWeight",
+      "min": 0,
+      "max": 500
+    },
+    {
+      "name": "FriendlySupportWeight",
+      "min": 0,
+      "max": 1200
+    },
+    {
+      "name": "DestinationQualityWeight",
+      "min": 1,
+      "max": 900
+    },
+    {
+      "name": "CenterControlWeight",
+      "min": 40,
+      "max": 1000
+    },
+    {
+      "name": "BehindBobailFormationWeight",
+      "min": 40,
+      "max": 2500
+    },
+    {
+      "name": "TokenDevelopmentWeight",
+      "min": 40,
+      "max": 900
+    }
+  ],
+  "weights": {
+    "progressWeight": 1272,
+    "pathToGoalWeight": 373,
+    "immediateWinThreatWeight": 19785,
+    "immediateLossThreatWeight": 23953,
+    "bobailMobilityWeight": 1085,
+    "forwardMobilityWeight": 488,
+    "trapRiskWeight": 1127,
+    "opponentPressureWeight": 419,
+    "friendlySupportWeight": 1165,
+    "destinationQualityWeight": 832,
+    "centerControlWeight": 962,
+    "behindBobailFormationWeight": 1644,
+    "tokenDevelopmentWeight": 92
+  }
+}

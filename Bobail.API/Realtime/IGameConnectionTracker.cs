@@ -9,4 +9,6 @@ public interface IGameConnectionTracker
     Task RemoveConnectionAsync(string connectionId);
 
     IReadOnlyCollection<string> GetConnectionsForGame(Guid gameId);
+
+    IReadOnlyCollection<string> GetConnectionsForUser(Guid userId);
 }

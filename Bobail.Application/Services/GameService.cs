@@ -164,6 +164,9 @@ public class GameService : IGameService
         if (game is null)
             throw new DomainException("Game not found.");
 
+        if (game.Mode == GameMode.OnlineMultiplayer)
+            throw new DomainException("Online games cannot be abandoned.");
+
         game.Abandon();
 
         await _repository.UpdateAsync(game);

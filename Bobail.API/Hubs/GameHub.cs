@@ -1,6 +1,7 @@
 using Bobail.API.Extensions;
 using Bobail.API.Realtime;
 using Bobail.Application.DTOs;
+using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
 using Bobail.Domain.Common;
 using Microsoft.AspNetCore.Authorization;
@@ -13,23 +14,31 @@ public class GameHub : Hub
 {
     private readonly IOnlineGameService _onlineGameService;
     private readonly IGameConnectionTracker _connectionTracker;
+    private readonly IUserRepository _userRepository;
     private readonly ILogger<GameHub> _logger;
 
     public GameHub(
         IOnlineGameService onlineGameService,
         IGameConnectionTracker connectionTracker,
+        IUserRepository userRepository,
         ILogger<GameHub> logger)
     {
         _onlineGameService = onlineGameService;
         _connectionTracker = connectionTracker;
+        _userRepository = userRepository;
         _logger = logger;
     }
 
     public override async Task OnConnectedAsync()
     {
+        var userId = await GetActiveUserIdOrDisconnectAsync();
+
+        if (!userId.HasValue)
+            return;
+
         await _connectionTracker.TrackConnectionAsync(
             Context.ConnectionId,
-            Context.User!.GetUserId());
+            userId.Value);
 
         await base.OnConnectedAsync();
     }
@@ -42,6 +51,11 @@ public class GameHub : Hub
 
     public async Task JoinGame(string gameId)
     {
+        var userId = await GetActiveUserIdOrDisconnectAsync();
+
+        if (!userId.HasValue)
+            return;
+
         if (!TryParseGameId(gameId, out var parsedGameId))
         {
             await SendErrorAsync("JoinRejected", "Invalid game id.");
@@ -50,10 +64,9 @@ public class GameHub : Hub
 
         try
         {
-            var userId = Context.User!.GetUserId();
             var state = await _onlineGameService.GetGameStateForUserAsync(
                 parsedGameId,
-                userId,
+                userId.Value,
                 Context.ConnectionAborted);
             var groupName = GetGroupName(parsedGameId);
 
@@ -93,6 +106,9 @@ public class GameHub : Hub
 
     public async Task MakePlayerMove(string gameId, PlayerMoveRequest request)
     {
+        if (!await EnsureActiveUserAsync())
+            return;
+
         await ExecuteMoveAsync(
             gameId,
             "PlayerMove",
@@ -105,6 +121,9 @@ public class GameHub : Hub
 
     public async Task MakeBobailMove(string gameId, BobailMoveRequest request)
     {
+        if (!await EnsureActiveUserAsync())
+            return;
+
         await ExecuteMoveAsync(
             gameId,
             "BobailMove",
@@ -166,6 +185,28 @@ public class GameHub : Hub
             eventName,
             new { message },
             Context.ConnectionAborted);
+    }
+
+    private async Task<bool> EnsureActiveUserAsync()
+    {
+        return (await GetActiveUserIdOrDisconnectAsync()).HasValue;
+    }
+
+    private async Task<Guid?> GetActiveUserIdOrDisconnectAsync()
+    {
+        var userId = Context.User!.GetUserId();
+        var user = await _userRepository.GetByIdAsync(userId);
+
+        if (user is not null && user.IsActive)
+            return userId;
+
+        await Clients.Caller.SendAsync(
+            "ForceLogout",
+            new { message = "Your account has been banned." },
+            Context.ConnectionAborted);
+
+        Context.Abort();
+        return null;
     }
 
     private static bool TryParseGameId(string gameId, out Guid parsedGameId)

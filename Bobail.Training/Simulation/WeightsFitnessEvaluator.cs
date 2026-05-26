@@ -38,6 +38,12 @@ public sealed class WeightsFitnessEvaluator
             CreateBaselineMediumBot,
             difficultyMultiplier: 1.3);
 
+        totalFitness += EvaluateMatchup(
+            weights,
+            _settings.HardGamesPerGenome,
+            CreateBaselineHardBot,
+            difficultyMultiplier: 1.6);
+
         return totalFitness;
     }
 
@@ -102,6 +108,12 @@ public sealed class WeightsFitnessEvaluator
     {
         var evaluator = new MediumBoardEvaluator(_baselineWeights);
         return new MediumBotStrategy(evaluator, NullLogger<MediumBotStrategy>.Instance);
+    }
+
+    private IBotStrategy CreateBaselineHardBot()
+    {
+        var evaluator = new HardBoardEvaluator(_baselineWeights);
+        return new HardBotStrategy(evaluator, NullLogger<HardBotStrategy>.Instance);
     }
 
     private static double ScoreResult(GameResult result, PlayerColor candidateColor, double difficultyMultiplier)

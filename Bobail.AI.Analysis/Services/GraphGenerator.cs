@@ -5,53 +5,148 @@ namespace Bobail.AI.Analysis.Services;
 
 public sealed class GraphGenerator
 {
-    private static readonly Dictionary<string, Color> BotColors = new(StringComparer.OrdinalIgnoreCase)
+    public void SavePairwiseWinrateHeatmap(
+        string outputPath,
+        IReadOnlyList<BotProfile> profiles,
+        IReadOnlyCollection<MatchupSummary> summaries)
     {
-        ["Easy"] = Colors.Orange,
-        ["Medium"] = Colors.SeaGreen,
-        ["Hard"] = Colors.Crimson
-    };
+        var values = BuildMatrix(
+            profiles,
+            (rowBot, columnBot) => rowBot.Name == columnBot.Name
+                ? double.NaN
+                : AnalysisTableBuilder.GetWinrate(rowBot.Name, columnBot.Name, summaries));
 
-    public void SaveWinrateComparison(string outputPath, IReadOnlyList<MatchupSummary> summaries)
+        var plot = CreateHeatmapPlot(
+            title: "Pairwise Win-rate Heatmap",
+            xLabel: "Opponent",
+            yLabel: "Bot",
+            profiles: profiles,
+            values: values,
+            valueLabel: value => double.IsNaN(value) ? "self" : $"{value:F1}%",
+            textColor: value => double.IsNaN(value) || value < 62 ? Colors.Black : Colors.White);
+
+        var heatmap = plot.GetPlottables().OfType<ScottPlot.Plottables.Heatmap>().Single();
+        heatmap.Colormap = new ScottPlot.Colormaps.CustomInterpolated(
+        [
+            Colors.Crimson,
+            Colors.White,
+            Colors.SeaGreen
+        ]);
+        heatmap.ManualRange = new ScottPlot.Range(0, 100);
+        heatmap.NaNCellColor = Colors.LightGray;
+
+        var colorBar = plot.Add.ColorBar(heatmap);
+        colorBar.Label = "Win-rate (%)";
+        plot.SavePng(outputPath, 1200, 850);
+    }
+
+    public void SaveOverallRanking(
+        string outputPath,
+        IReadOnlyList<BotRankingRow> ranking)
     {
         var plot = new Plot();
-        var bars = summaries
-            .Select((summary, index) => new Bar
+        var bars = ranking
+            .Select((row, index) => new Bar
             {
                 Position = index,
-                Value = summary.LeaderWinrate,
-                Label = summary.MatchupName,
-                FillColor = ResolveColor(summary.LeaderName),
-                ValueLabel = $"{summary.LeaderWinrate:F1}%"
+                Value = row.Score,
+                FillColor = index == 0 ? Colors.SeaGreen : Colors.SlateGray,
+                ValueLabel = $"{row.Score:F1}%"
             })
             .ToArray();
 
         plot.Add.Bars(bars);
+        plot.Title("Overall Bot Ranking by Score");
+        plot.YLabel("Score (%)");
         plot.Axes.Bottom.SetTicks(
-            summaries.Select((_, index) => (double)index).ToArray(),
-            summaries.Select(summary => summary.MatchupName).ToArray());
-
-        plot.Title("Matchup Leader Winrate");
-        plot.YLabel("Winrate (%)");
-        plot.SavePng(outputPath, 1200, 800);
+            ranking.Select((_, index) => (double)index).ToArray(),
+            ranking.Select(row => row.BotName).ToArray());
+        plot.Axes.SetLimits(-0.5, ranking.Count - 0.5, 0, 100);
+        plot.SavePng(outputPath, 1200, 750);
     }
 
-    private static Color ResolveColor(string botName)
+    public void SaveAverageTurnsHeatmap(
+        string outputPath,
+        IReadOnlyList<BotProfile> profiles,
+        IReadOnlyCollection<MatchupSummary> summaries)
     {
-        if (botName.Contains("Easy", StringComparison.OrdinalIgnoreCase))
-            return Colors.Orange;
+        var values = BuildMatrix(
+            profiles,
+            (rowBot, columnBot) => rowBot.Name == columnBot.Name
+                ? double.NaN
+                : AnalysisTableBuilder.GetAverageTurns(rowBot.Name, columnBot.Name, summaries));
 
-        if (botName.Contains("Medium", StringComparison.OrdinalIgnoreCase))
-            return Colors.SeaGreen;
+        var plot = CreateHeatmapPlot(
+            title: "Average Game Length per Matchup",
+            xLabel: "Opponent",
+            yLabel: "Bot",
+            profiles: profiles,
+            values: values,
+            valueLabel: value => double.IsNaN(value) ? "self" : $"{value:F1}",
+            textColor: _ => Colors.Black);
 
-        if (botName.Contains("Hard", StringComparison.OrdinalIgnoreCase) ||
-            botName.Contains("GA", StringComparison.OrdinalIgnoreCase))
+        var heatmap = plot.GetPlottables().OfType<ScottPlot.Plottables.Heatmap>().Single();
+        heatmap.Colormap = new ScottPlot.Colormaps.Viridis();
+        heatmap.NaNCellColor = Colors.LightGray;
+
+        var colorBar = plot.Add.ColorBar(heatmap);
+        colorBar.Label = "Average turns";
+        plot.SavePng(outputPath, 1200, 850);
+    }
+
+    private static Plot CreateHeatmapPlot(
+        string title,
+        string xLabel,
+        string yLabel,
+        IReadOnlyList<BotProfile> profiles,
+        double[,] values,
+        Func<double, string> valueLabel,
+        Func<double, Color> textColor)
+    {
+        var plot = new Plot();
+        plot.Add.Heatmap(values);
+
+        plot.Title(title);
+        plot.XLabel(xLabel);
+        plot.YLabel(yLabel);
+        plot.Axes.Bottom.SetTicks(
+            profiles.Select((_, index) => (double)index).ToArray(),
+            profiles.Select(profile => profile.Name).ToArray());
+        plot.Axes.Left.SetTicks(
+            profiles.Select((_, index) => (double)index).ToArray(),
+            profiles.Select(profile => profile.Name).ToArray());
+        plot.Axes.Margins(0, 0);
+
+        for (int rowIndex = 0; rowIndex < profiles.Count; rowIndex++)
         {
-            return Colors.Crimson;
+            for (int columnIndex = 0; columnIndex < profiles.Count; columnIndex++)
+            {
+                var value = values[rowIndex, columnIndex];
+                var text = plot.Add.Text(valueLabel(value), columnIndex, rowIndex);
+                text.Alignment = Alignment.MiddleCenter;
+                text.LabelFontSize = 16;
+                text.LabelFontColor = textColor(value);
+            }
         }
 
-        return BotColors.TryGetValue(botName, out var color)
-            ? color
-            : Colors.SlateGray;
+        return plot;
+    }
+
+    private static double[,] BuildMatrix(
+        IReadOnlyList<BotProfile> profiles,
+        Func<BotProfile, BotProfile, double?> valueFactory)
+    {
+        var values = new double[profiles.Count, profiles.Count];
+
+        for (int rowIndex = 0; rowIndex < profiles.Count; rowIndex++)
+        {
+            for (int columnIndex = 0; columnIndex < profiles.Count; columnIndex++)
+            {
+                values[rowIndex, columnIndex] = valueFactory(profiles[rowIndex], profiles[columnIndex])
+                    ?? double.NaN;
+            }
+        }
+
+        return values;
     }
 }

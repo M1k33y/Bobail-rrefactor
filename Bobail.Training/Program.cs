@@ -7,7 +7,8 @@ using GeneticSharp;
 var settings = new TrainingSettings
 {
     EasyGamesPerGenome = 4,
-    MediumGamesPerGenome = 26,
+    MediumGamesPerGenome = 6,
+    HardGamesPerGenome = 10,
     MaxTurnsPerGame = 200,
     Generations = 200,
     PopulationMinSize = 50,
@@ -17,6 +18,7 @@ var settings = new TrainingSettings
 
     // EasyGamesPerGenome = 5;
     // MediumGamesPerGenome = 20;
+    // HardGamesPerGenome = 10;
     // MaxTurnsPerGame = 100
     // Generations = 100;
     // PopulationMinSize = 40;
@@ -37,9 +39,9 @@ var ga = new GeneticAlgorithm(
 
 ga.Reinsertion = new ElitistReinsertion();
 
-const float baseMutationProbability = 0.10f;
-const float mediumMutationProbability = 0.2f;
-const float highMutationProbability = 0.3f;
+const float baseMutationProbability = 0.08f;
+const float mediumMutationProbability = 0.15f;
+const float highMutationProbability = 0.23f;
 const double improvementEpsilon = 0.01;
 const int randomImmigrantStagnationThreshold = 10;
 const double randomImmigrantFraction = 0.15;
@@ -93,7 +95,7 @@ ga.GenerationRan += (_, _) =>
 
         Console.WriteLine(
             $"Generation {ga.GenerationsNumber}: time={generationElapsed:mm\\:ss}, generationBest={bestChromosome.Fitness:F2}, globalBest={bestFitnessSoFar:F2}, stagnant={stagnantGenerations}, mutation={ga.MutationProbability:F2}, immigrants={immigrantsInjected}");
-        Console.WriteLine($" weights={bestChromosome.ToWeights()}");
+        Console.WriteLine($"{bestChromosome.ToWeights()}");
         Console.WriteLine();
     }
 
@@ -125,7 +127,7 @@ var profile = new TrainingRunProfile(
     BestGeneration: bestGeneration,
     FinalGeneration: ga.GenerationsNumber,
     FinalGenerationBestFitness: finalGenerationBest.Fitness.GetValueOrDefault(),
-    FitnessAggregation: "Per matchup: Min(candidate red score, candidate green score) / candidate games per color",
+    FitnessAggregation: "Easy x1.0 + Medium x1.3 + Hard_Default x1.6; per matchup: Min(candidate red score, candidate green score) / candidate games per color",
     Settings: settings,
     MutationSettings: new MutationSettingsProfile(
         baseMutationProbability,

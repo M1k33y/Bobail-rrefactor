@@ -1,6 +1,7 @@
 using Bobail.API.Hubs;
 using Bobail.API.Middleware;
 using Bobail.API.Realtime;
+using Bobail.API.Swagger;
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
 using Bobail.Application.Services;
@@ -25,6 +26,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.OperationFilter<GameEndpointTagOperationFilter>();
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -143,7 +146,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var path = context.HttpContext.Request.Path;
 
                 if (!string.IsNullOrEmpty(accessToken) &&
-                    path.StartsWithSegments("/hubs/game"))
+                    (path.StartsWithSegments("/hubs/game") ||
+                     path.StartsWithSegments("/hubs/auth")))
                 {
                     context.Token = accessToken;
                 }
@@ -186,6 +190,7 @@ app.UseAuthentication();
 app.UseMiddleware<ActiveUserMiddleware>();
 app.UseAuthorization();
 
+app.MapHub<AuthHub>("/hubs/auth");
 app.MapHub<GameHub>("/hubs/game");
 app.MapControllers();
 
