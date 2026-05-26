@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { gameApi } from "../api/gameApi";
 import { useAuth } from "../../auth/hooks/useAuth";
@@ -10,6 +10,34 @@ function OnlineGameStartPage() {
   const [gameId, setGameId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    let active = true;
+
+    async function redirectToActiveGame() {
+      try {
+        const current = await gameApi.getCurrentOnline();
+
+        if (active && current?.hasActiveGame && current.gameId) {
+          navigate(`/play/online/${current.gameId}`, { replace: true });
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.message || "Failed to load active online game.");
+        }
+      }
+    }
+
+    redirectToActiveGame();
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, navigate]);
 
   const ensureAuthenticated = () => {
     if (isAuthenticated) {

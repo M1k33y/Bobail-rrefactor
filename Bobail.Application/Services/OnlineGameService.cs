@@ -34,6 +34,18 @@ public class OnlineGameService : IOnlineGameService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        var lockedGameId = await GetActiveOnlineGameIdForUserAsync(
+            userId,
+            cancellationToken);
+
+        if (lockedGameId.HasValue)
+            throw new DomainException("You are already in an active online game.");
+
+        await AbandonWaitingOnlineGamesForUserAsync(
+            userId,
+            excludedGameId: null,
+            cancellationToken);
+
         var game = new Game(GameMode.OnlineMultiplayer);
 
         await _gameRepository.AddAsync(game, cancellationToken);
@@ -48,11 +60,37 @@ public class OnlineGameService : IOnlineGameService
         return game.Id;
     }
 
+    public async Task<Guid?> GetActiveOnlineGameIdForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var gameIds = await _gamePlayerRepository.GetActiveOnlineGameIdsForUserAsync(
+            userId,
+            cancellationToken);
+
+        foreach (var gameId in gameIds)
+        {
+            var game = await _gameRepository.GetByIdAsync(gameId, cancellationToken);
+
+            if (game?.Status == GameStatus.InProgress)
+                return gameId;
+        }
+
+        return null;
+    }
+
     public async Task<GameResponse> JoinOnlineGameAsync(
         Guid gameId,
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        var lockedGameId = await GetActiveOnlineGameIdForUserAsync(
+            userId,
+            cancellationToken);
+
+        if (lockedGameId.HasValue && lockedGameId.Value != gameId)
+            throw new DomainException("You are already in an active online game.");
+
         using var gameLock = await _gameLockManager.AcquireAsync(gameId, cancellationToken);
 
         var game = await GetOnlineGameAsync(gameId, cancellationToken);
@@ -65,6 +103,11 @@ public class OnlineGameService : IOnlineGameService
         {
             if (game.Status != GameStatus.WaitingForPlayers)
                 throw new DomainException("Game is not accepting new players.");
+
+            await AbandonWaitingOnlineGamesForUserAsync(
+                userId,
+                gameId,
+                cancellationToken);
 
             playerColor = await _gamePlayerRepository.AddOnlinePlayerAsync(
                 gameId,
@@ -150,6 +193,78 @@ public class OnlineGameService : IOnlineGameService
         return ToMoveResult("BobailMove", playerColor, game);
     }
 
+    public async Task<IReadOnlyList<GameResponse>> ForfeitActiveGamesForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var gameIds = await _gamePlayerRepository.GetActiveOnlineGameIdsForUserAsync(
+            userId,
+            cancellationToken);
+        var finishedGames = new List<GameResponse>();
+
+        foreach (var gameId in gameIds)
+        {
+            using var gameLock = await _gameLockManager.AcquireAsync(gameId, cancellationToken);
+
+            var game = await GetOnlineGameAsync(gameId, cancellationToken);
+
+            if (game.Status is not (GameStatus.WaitingForPlayers or GameStatus.InProgress))
+                continue;
+
+            var forfeitingColor = await _gamePlayerRepository.GetPlayerColorAsync(
+                gameId,
+                userId,
+                cancellationToken);
+
+            if (!forfeitingColor.HasValue)
+                continue;
+
+            var humanPlayerCount = await _gamePlayerRepository.CountHumanPlayersAsync(
+                gameId,
+                cancellationToken);
+
+            if (humanPlayerCount < 2)
+            {
+                game.Abandon();
+                await PersistMoveAsync(game, cancellationToken);
+                continue;
+            }
+
+            var winner = GetOpponentColor(forfeitingColor.Value);
+            game.Finish(winner);
+
+            await PersistMoveAsync(game, cancellationToken);
+            finishedGames.Add(GameResponseMapper.ToResponse(game));
+        }
+
+        return finishedGames;
+    }
+
+    private async Task AbandonWaitingOnlineGamesForUserAsync(
+        Guid userId,
+        Guid? excludedGameId,
+        CancellationToken cancellationToken)
+    {
+        var gameIds = await _gamePlayerRepository.GetActiveOnlineGameIdsForUserAsync(
+            userId,
+            cancellationToken);
+
+        foreach (var gameId in gameIds)
+        {
+            if (excludedGameId.HasValue && gameId == excludedGameId.Value)
+                continue;
+
+            using var gameLock = await _gameLockManager.AcquireAsync(gameId, cancellationToken);
+            var game = await GetOnlineGameAsync(gameId, cancellationToken);
+
+            if (game.Status != GameStatus.WaitingForPlayers)
+                continue;
+
+            game.Abandon();
+            await PersistMoveAsync(game, cancellationToken);
+        }
+    }
+
     private async Task<Game> GetOnlineGameAsync(
         Guid gameId,
         CancellationToken cancellationToken)
@@ -209,5 +324,12 @@ public class OnlineGameService : IOnlineGameService
             PlayerColor = playerColor.ToString(),
             Game = GameResponseMapper.ToResponse(game)
         };
+    }
+
+    private static PlayerColor GetOpponentColor(PlayerColor playerColor)
+    {
+        return playerColor == PlayerColor.Red
+            ? PlayerColor.Green
+            : PlayerColor.Red;
     }
 }

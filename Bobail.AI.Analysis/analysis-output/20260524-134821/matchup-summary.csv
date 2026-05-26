@@ -1,0 +1,11 @@
+﻿MatchupName,BotAName,BotBName,LeaderName,TotalGames,BotAWins,BotBWins,Draws,BotAWinrate,BotBWinrate,LeaderWinrate,BotAStartedGames,BotAStartedWins,BotBStartedGames,BotBStartedWins,BotAStartedWinrate,BotBStartedWinrate,AverageTurns,MinTurns,MaxTurns,OneSidedLeaderPValue,StatisticallySignificant
+Hard_Default vs bot5,Hard_Default,bot5,bot5,300,8,292,0,2.6667,97.3333,97.3333,150,0,150,142,0.0000,94.6667,29.6600,27,151,0.000000,True
+Hard_Default vs bot2,Hard_Default,bot2,bot2,300,53,197,50,17.6667,65.6667,78.8000,150,36,150,133,24.0000,88.6667,105.9233,28,200,0.000000,True
+Hard_Default vs bot3,Hard_Default,bot3,Hard_Default,300,150,130,20,50.0000,43.3333,53.5714,150,150,150,130,100.0000,86.6667,50.2667,30,200,0.115999,False
+Hard_Default vs bot4,Hard_Default,bot4,Hard_Default,300,168,131,1,56.0000,43.6667,56.1873,150,150,150,131,100.0000,87.3333,35.7700,28,200,0.016187,True
+bot5 vs bot2,bot5,bot2,bot5,300,289,5,6,96.3333,1.6667,98.2993,150,139,150,0,92.6667,0.0000,48.6300,27,200,0.000000,True
+bot5 vs bot3,bot5,bot3,bot5,300,300,0,0,100.0000,0.0000,100.0000,150,150,150,0,100.0000,0.0000,28.5000,27,30,0.000000,True
+bot5 vs bot4,bot5,bot4,bot5,300,283,11,6,94.3333,3.6667,96.2585,150,140,150,1,93.3333,0.6667,36.0567,27,200,0.000000,True
+bot2 vs bot3,bot2,bot3,Tie,300,150,150,0,50.0000,50.0000,0.0000,150,150,150,150,100.0000,100.0000,34.0000,34,34,1.000000,False
+bot2 vs bot4,bot2,bot4,bot2,300,153,129,18,51.0000,43.0000,54.2553,150,150,150,129,100.0000,86.0000,66.1767,28,200,0.076476,False
+bot3 vs bot4,bot3,bot4,bot4,300,141,158,1,47.0000,52.6667,52.8428,150,141,150,150,94.0000,100.0000,39.0600,30,200,0.162770,False

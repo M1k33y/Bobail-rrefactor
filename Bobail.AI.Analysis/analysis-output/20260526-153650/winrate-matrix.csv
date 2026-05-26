@@ -1,0 +1,4 @@
+﻿Bot \ Opponent (win-rate %),bot5,Hard_Default,bot3
+bot5,self,50.00,100.00
+Hard_Default,50.00,self,100.00
+bot3,0.00,0.00,self

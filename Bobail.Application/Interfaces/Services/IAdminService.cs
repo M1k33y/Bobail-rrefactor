@@ -8,7 +8,12 @@ public interface IAdminService
         AdminUsersQuery query,
         CancellationToken cancellationToken = default);
 
-    Task<AdminUserResponse> ToggleUserActiveAsync(
+    Task<BanUserResponse> BanUserAsync(
+        Guid userId,
+        Guid currentAdminId,
+        CancellationToken cancellationToken = default);
+
+    Task<AdminUserResponse> UnbanUserAsync(
         Guid userId,
         Guid currentAdminId,
         CancellationToken cancellationToken = default);

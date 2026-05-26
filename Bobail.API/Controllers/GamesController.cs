@@ -65,6 +65,22 @@ public class GamesController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("online/current")]
+    public async Task<ActionResult<ActiveOnlineGameResponse>> GetCurrentOnlineGame(
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var gameId = await _onlineGameService.GetActiveOnlineGameIdForUserAsync(
+            userId,
+            cancellationToken);
+
+        return Ok(new ActiveOnlineGameResponse
+        {
+            GameId = gameId
+        });
+    }
+
+    [Authorize]
     [HttpPost("{id:guid}/join-online")]
     public async Task<ActionResult<GameResponse>> JoinOnlineGame(
         Guid id,
@@ -246,9 +262,4 @@ public class GamesController : ControllerBase
     }
 
 
-    [HttpGet("test-auth")]
-    public IActionResult TestAuth()
-    {
-        return Ok("Authorized");
-    }
 }

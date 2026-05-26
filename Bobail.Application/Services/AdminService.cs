@@ -10,10 +10,14 @@ public class AdminService : IAdminService
     private const int AdminRole = 1;
 
     private readonly IUserRepository _userRepository;
+    private readonly IOnlineGameService _onlineGameService;
 
-    public AdminService(IUserRepository userRepository)
+    public AdminService(
+        IUserRepository userRepository,
+        IOnlineGameService onlineGameService)
     {
         _userRepository = userRepository;
+        _onlineGameService = onlineGameService;
     }
 
     public async Task<PagedAdminUsersResponse> GetUsersAsync(
@@ -52,7 +56,7 @@ public class AdminService : IAdminService
         };
     }
 
-    public async Task<AdminUserResponse> ToggleUserActiveAsync(
+    public async Task<BanUserResponse> BanUserAsync(
         Guid userId,
         Guid currentAdminId,
         CancellationToken cancellationToken = default)
@@ -68,7 +72,43 @@ public class AdminService : IAdminService
         if (user.Role == AdminRole && user.IsActive)
             throw new UnauthorizedAccessException("Admins cannot ban other admins.");
 
-        user.IsActive = !user.IsActive;
+        if (!user.IsActive)
+        {
+            return new BanUserResponse
+            {
+                User = MapToResponse(user)
+            };
+        }
+
+        user.IsActive = false;
+
+        await _userRepository.UpdateAsync(user);
+
+        var finishedGames = await _onlineGameService.ForfeitActiveGamesForUserAsync(
+            user.Id,
+            cancellationToken);
+
+        return new BanUserResponse
+        {
+            User = MapToResponse(user),
+            FinishedGames = finishedGames.ToList()
+        };
+    }
+
+    public async Task<AdminUserResponse> UnbanUserAsync(
+        Guid userId,
+        Guid currentAdminId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+
+        if (user is null)
+            throw new KeyNotFoundException("User not found.");
+
+        if (user.IsActive)
+            return MapToResponse(user);
+
+        user.IsActive = true;
 
         await _userRepository.UpdateAsync(user);
 

@@ -76,6 +76,104 @@ public class OnlineGameServiceTests
     }
 
     [Fact]
+    public async Task CreateOnlineGameAsync_When_User_Already_Has_Active_Game_Throws()
+    {
+        var existingGame = StartedOnlineGame();
+        var userId = Guid.NewGuid();
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var service = CreateService(
+            gameRepository,
+            gamePlayerRepository: gamePlayerRepository);
+
+        gamePlayerRepository
+            .Setup(x => x.GetActiveOnlineGameIdsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid> { existingGame.Id });
+        gameRepository
+            .Setup(x => x.GetByIdAsync(existingGame.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingGame);
+
+        var act = () => service.CreateOnlineGameAsync(userId);
+
+        await act.Should()
+            .ThrowAsync<DomainException>()
+            .WithMessage("You are already in an active online game.");
+        gameRepository.Verify(
+            x => x.AddAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task JoinOnlineGameAsync_When_User_Has_Different_Active_Game_Throws()
+    {
+        var targetGameId = Guid.NewGuid();
+        var existingGame = StartedOnlineGame();
+        var userId = Guid.NewGuid();
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var service = CreateService(
+            gameRepository,
+            gamePlayerRepository: gamePlayerRepository);
+
+        gamePlayerRepository
+            .Setup(x => x.GetActiveOnlineGameIdsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid> { existingGame.Id });
+        gameRepository
+            .Setup(x => x.GetByIdAsync(existingGame.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingGame);
+
+        var act = () => service.JoinOnlineGameAsync(targetGameId, userId);
+
+        await act.Should()
+            .ThrowAsync<DomainException>()
+            .WithMessage("You are already in an active online game.");
+        gamePlayerRepository.Verify(
+            x => x.AddOnlinePlayerAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateOnlineGameAsync_When_User_Has_Waiting_Game_Abandons_It_And_Creates_New_Game()
+    {
+        var waitingGame = new Game(GameMode.OnlineMultiplayer);
+        var userId = Guid.NewGuid();
+        Game? createdGame = null;
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository);
+
+        gamePlayerRepository
+            .Setup(x => x.GetActiveOnlineGameIdsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid> { waitingGame.Id });
+        gameRepository
+            .Setup(x => x.GetByIdAsync(waitingGame.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(waitingGame);
+        gameRepository
+            .Setup(x => x.AddAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()))
+            .Callback<Game, CancellationToken>((game, _) => createdGame = game)
+            .Returns(Task.CompletedTask);
+        gamePlayerRepository
+            .Setup(x => x.AddOnlinePlayerAsync(It.IsAny<Guid>(), userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Red);
+
+        var newGameId = await service.CreateOnlineGameAsync(userId);
+
+        waitingGame.Status.Should().Be(GameStatus.Abandoned);
+        createdGame.Should().NotBeNull();
+        newGameId.Should().Be(createdGame!.Id);
+        gameRepository.Verify(
+            x => x.UpdateAsync(waitingGame, It.IsAny<CancellationToken>()),
+            Times.Once);
+        gameStateRepository.Verify(
+            x => x.AddSnapshotAsync(waitingGame, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task JoinOnlineGameAsync_When_Second_Player_Joins_Starts_Game()
     {
         var game = new Game(GameMode.OnlineMultiplayer);
@@ -104,6 +202,52 @@ public class OnlineGameServiceTests
         response.Status.Should().Be(GameStatus.InProgress.ToString());
         gameRepository.Verify(
             x => x.UpdateAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task JoinOnlineGameAsync_When_User_Has_Different_Waiting_Game_Abandons_Old_Game_And_Joins_Target()
+    {
+        var oldWaitingGame = new Game(GameMode.OnlineMultiplayer);
+        var targetGame = new Game(GameMode.OnlineMultiplayer);
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository);
+        var userId = Guid.NewGuid();
+
+        gamePlayerRepository
+            .Setup(x => x.GetActiveOnlineGameIdsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid> { oldWaitingGame.Id });
+        gameRepository
+            .Setup(x => x.GetByIdAsync(oldWaitingGame.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(oldWaitingGame);
+        gameRepository
+            .Setup(x => x.GetByIdAsync(targetGame.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(targetGame);
+        gamePlayerRepository
+            .Setup(x => x.GetPlayerColorAsync(targetGame.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PlayerColor?)null);
+        gamePlayerRepository
+            .Setup(x => x.AddOnlinePlayerAsync(targetGame.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Green);
+        gamePlayerRepository
+            .Setup(x => x.CountHumanPlayersAsync(targetGame.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(2);
+
+        var response = await service.JoinOnlineGameAsync(targetGame.Id, userId);
+
+        oldWaitingGame.Status.Should().Be(GameStatus.Abandoned);
+        targetGame.Status.Should().Be(GameStatus.InProgress);
+        response.PlayerColor.Should().Be(PlayerColor.Green.ToString());
+        gameRepository.Verify(
+            x => x.UpdateAsync(oldWaitingGame, It.IsAny<CancellationToken>()),
+            Times.Once);
+        gameStateRepository.Verify(
+            x => x.AddSnapshotAsync(oldWaitingGame, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -299,6 +443,46 @@ public class OnlineGameServiceTests
         gameLock.Disposed.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task ForfeitActiveGamesForUserAsync_Finishes_Active_Game_For_Opponent()
+    {
+        var game = StartedOnlineGame();
+        var userId = Guid.NewGuid();
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository);
+
+        gamePlayerRepository
+            .Setup(x => x.GetActiveOnlineGameIdsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid> { game.Id });
+        gameRepository
+            .Setup(x => x.GetByIdAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(game);
+        gamePlayerRepository
+            .Setup(x => x.GetPlayerColorAsync(game.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Red);
+        gamePlayerRepository
+            .Setup(x => x.CountHumanPlayersAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(2);
+
+        var result = await service.ForfeitActiveGamesForUserAsync(userId);
+
+        result.Should().ContainSingle();
+        game.Status.Should().Be(GameStatus.Finished);
+        game.Winner.Should().Be(PlayerColor.Green);
+        result[0].Winner.Should().Be(PlayerColor.Green.ToString());
+        gameRepository.Verify(
+            x => x.UpdateAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+        gameStateRepository.Verify(
+            x => x.AddSnapshotAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     private static OnlineGameService CreateService(
         Mock<IGameRepository>? gameRepository = null,
         Mock<IGameStateRepository>? gameStateRepository = null,
@@ -309,11 +493,14 @@ public class OnlineGameServiceTests
         lockManager
             .Setup(x => x.AcquireAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TestGameLock());
+        (gamePlayerRepository ??= new Mock<IGamePlayerRepository>())
+            .Setup(x => x.GetActiveOnlineGameIdsForUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid>());
 
         return new OnlineGameService(
             (gameRepository ?? new Mock<IGameRepository>()).Object,
             (gameStateRepository ?? new Mock<IGameStateRepository>()).Object,
-            (gamePlayerRepository ?? new Mock<IGamePlayerRepository>()).Object,
+            gamePlayerRepository.Object,
             lockManager.Object,
             Mock.Of<ILogger<OnlineGameService>>());
     }

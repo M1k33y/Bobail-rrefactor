@@ -6,6 +6,8 @@ public sealed class TrainingSettings
 
     public int MediumGamesPerGenome { get; init; } = 6;
 
+    public int HardGamesPerGenome { get; init; } = 6;
+
     public int MaxTurnsPerGame { get; init; } = 60;
 
     public int Generations { get; init; } = 100;

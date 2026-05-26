@@ -117,7 +117,7 @@ function AdminUsersPage() {
     updateSearchParams({ page, search });
   }
 
-  async function handleToggle(user) {
+  async function handleUserAction(user) {
     const action = user.isActive ? "ban" : "unban";
     const confirmed = window.confirm(`Are you sure you want to ${action} ${user.email}?`);
 
@@ -138,7 +138,10 @@ function AdminUsersPage() {
         )
       );
 
-      const updatedUser = await adminApi.toggleUserActive(user.id);
+      const response = user.isActive
+        ? await adminApi.banUser(user.id)
+        : await adminApi.unbanUser(user.id);
+      const updatedUser = response.user ?? response;
 
       setUsers((currentUsers) =>
         currentUsers.map((candidate) =>
@@ -215,7 +218,7 @@ function AdminUsersPage() {
                           <button
                             type="button"
                             className={`admin-action-button ${user.isActive ? "ban" : "unban"}`}
-                            onClick={() => handleToggle(user)}
+                            onClick={() => handleUserAction(user)}
                             disabled={disabled}
                             title={isSelf || isProtectedAdmin ? "Protected account" : actionLabel}
                           >

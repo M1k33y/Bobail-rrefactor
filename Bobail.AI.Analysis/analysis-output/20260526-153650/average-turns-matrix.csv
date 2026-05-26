@@ -1,0 +1,4 @@
+﻿Bot \ Opponent (average turns),bot5,Hard_Default,bot3
+bot5,self,27.00,28.50
+Hard_Default,27.00,self,28.50
+bot3,28.50,28.50,self

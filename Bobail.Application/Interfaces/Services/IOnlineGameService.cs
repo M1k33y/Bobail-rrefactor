@@ -8,6 +8,10 @@ public interface IOnlineGameService
         Guid userId,
         CancellationToken cancellationToken = default);
 
+    Task<Guid?> GetActiveOnlineGameIdForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
     Task<GameResponse> JoinOnlineGameAsync(
         Guid gameId,
         Guid userId,
@@ -28,5 +32,9 @@ public interface IOnlineGameService
         Guid gameId,
         Guid userId,
         BobailMoveRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<GameResponse>> ForfeitActiveGamesForUserAsync(
+        Guid userId,
         CancellationToken cancellationToken = default);
 }

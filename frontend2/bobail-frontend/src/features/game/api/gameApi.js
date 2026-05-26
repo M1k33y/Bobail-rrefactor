@@ -18,6 +18,17 @@ export const gameApi = {
         return res.json();
     },
 
+    getCurrentOnline: async () => {
+        const res = await authFetch(`${API}/online/current`);
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Failed to load active online game.");
+        }
+
+        return res.json();
+    },
+
     joinOnline: async (gameId) => {
         const res = await authFetch(`${API}/${gameId}/join-online`, {
             method: "POST"

@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Bobail.Application.DTOs;
+using Bobail.Domain.Games;
+using Bobail.Infrastructure.Persistance;
 using Bobail.Infrastructure.Persistance.Entities;
 using Bobail.Infrastructure.Persistence;
 using Bobail.IntegrationTests.Factories;
@@ -45,18 +47,18 @@ public class AdminIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         Assert.NotNull(users);
         Assert.Contains(users!.Items, x => x.Id == target.Id);
 
-        using var toggleRequest = CreateAuthorizedRequest(
+        using var banRequest = CreateAuthorizedRequest(
             HttpMethod.Patch,
-            $"/api/admin/users/{target.Id}/toggle-active",
+            $"/api/admin/users/{target.Id}/ban",
             token);
 
-        var toggleResponse = await _client.SendAsync(toggleRequest);
+        var banResponse = await _client.SendAsync(banRequest);
 
-        Assert.Equal(HttpStatusCode.OK, toggleResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, banResponse.StatusCode);
 
-        var updatedUser = await toggleResponse.Content.ReadFromJsonAsync<AdminUserResponse>();
-        Assert.NotNull(updatedUser);
-        Assert.False(updatedUser!.IsActive);
+        var banResult = await banResponse.Content.ReadFromJsonAsync<BanUserResponse>();
+        Assert.NotNull(banResult);
+        Assert.False(banResult!.User.IsActive);
 
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
@@ -77,6 +79,74 @@ public class AdminIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         var response = await _client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task BanUser_Should_Finish_Active_Online_Game_With_Opponent_As_Winner()
+    {
+        var admin = CreateUser("admin", role: 1, isActive: true);
+        var red = CreateUser("red", role: 0, isActive: true);
+        var green = CreateUser("green", role: 0, isActive: true);
+        var game = new Game(GameMode.OnlineMultiplayer);
+        game.Start();
+
+        await SeedUsersAsync(admin, red, green);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+            dbContext.Games.Add(new GameEntity
+            {
+                Id = game.Id,
+                StateJson = GameSerializer.Serialize(game),
+                Status = (int)game.Status,
+                CurrentTurn = (int)game.CurrentTurn,
+                Mode = (int)game.Mode,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+            dbContext.GamePlayers.AddRange(
+                new GamePlayerEntity
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = game.Id,
+                    UserId = red.Id,
+                    Color = (int)PlayerColor.Red,
+                    IsBot = false
+                },
+                new GamePlayerEntity
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = game.Id,
+                    UserId = green.Id,
+                    Color = (int)PlayerColor.Green,
+                    IsBot = false
+                });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var adminToken = await LoginAsync(admin.Email);
+        using var banRequest = CreateAuthorizedRequest(
+            HttpMethod.Patch,
+            $"/api/admin/users/{red.Id}/ban",
+            adminToken);
+
+        var banResponse = await _client.SendAsync(banRequest);
+
+        Assert.Equal(HttpStatusCode.OK, banResponse.StatusCode);
+
+        var banResult = await banResponse.Content.ReadFromJsonAsync<BanUserResponse>();
+        Assert.NotNull(banResult);
+        Assert.Single(banResult!.FinishedGames);
+        Assert.Equal(PlayerColor.Green.ToString(), banResult.FinishedGames[0].Winner);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<GameDbContext>();
+            var storedGame = await dbContext.Games.FirstAsync(x => x.Id == game.Id);
+            Assert.Equal((int)GameStatus.Finished, storedGame.Status);
+            Assert.Equal(green.Id, storedGame.WinnerUserId);
+        }
     }
 
     private static UserEntity CreateUser(string prefix, int role, bool isActive)

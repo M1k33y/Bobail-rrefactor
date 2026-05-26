@@ -4,9 +4,9 @@ namespace Bobail.Training.Genetics;
 
 public sealed class SimpleHybridMutation : MutationBase
 {
-    private const double ResetChance = 0.05;
-    private const double MinStepPercent = 0.05;
-    private const double MaxStepPercent = 0.20;
+    private const double ResetChance = 0.03;
+    private const double MinStepPercent = 0.03;
+    private const double MaxStepPercent = 0.15;
 
     protected override void PerformMutate(IChromosome chromosome, float probability)
     {
@@ -29,7 +29,7 @@ public sealed class SimpleHybridMutation : MutationBase
             var (min, max) = EvaluationWeightsChromosome.GetGeneRange(geneIndex);
             var current = (int)weightsChromosome.GetGene(geneIndex).Value;
 
-            // Usually nudge the current value; sometimes reset it to reintroduce exploration.
+           
             var next = random.GetDouble() < ResetChance
                 ? random.GetInt(min, max + 1)
                 : MutateNear(current, min, max);

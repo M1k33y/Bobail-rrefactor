@@ -10,6 +10,7 @@ var profiles = profileSelector.SelectProfiles(options, profileLoader);
 var botFactory = new BotFactory();
 var simulationRunner = new SimulationRunner(botFactory, options.MaxTurnsPerGame);
 var statisticsAggregator = new StatisticsAggregator();
+var tableBuilder = new AnalysisTableBuilder();
 var csvExporter = new CsvExporter();
 var graphGenerator = new GraphGenerator();
 var matchupDefinitions = MatchupDefinition.CreateRoundRobin(profiles);
@@ -50,15 +51,32 @@ foreach (var matchup in matchupDefinitions)
     Console.WriteLine();
 }
 
+var ranking = tableBuilder.BuildRanking(profiles, summaries);
+var rankedProfiles = tableBuilder.OrderProfilesByRanking(profiles, ranking);
+
 csvExporter.ExportGameResults(Path.Combine(outputDirectory, "game-results.csv"), allResults);
 csvExporter.ExportMatchupSummaries(Path.Combine(outputDirectory, "matchup-summary.csv"), summaries);
-csvExporter.ExportWinrateMatrix(Path.Combine(outputDirectory, "winrate-matrix.csv"), profiles, summaries);
+csvExporter.ExportWinrateMatrix(Path.Combine(outputDirectory, "winrate-matrix.csv"), rankedProfiles, summaries);
+csvExporter.ExportAverageTurnsMatrix(Path.Combine(outputDirectory, "average-turns-matrix.csv"), rankedProfiles, summaries);
+csvExporter.ExportOverallRanking(Path.Combine(outputDirectory, "overall-ranking.csv"), ranking);
 
-graphGenerator.SaveWinrateComparison(
-    Path.Combine(outputDirectory, "winrate.png"),
+graphGenerator.SavePairwiseWinrateHeatmap(
+    Path.Combine(outputDirectory, "pairwise-winrate-heatmap.png"),
+    rankedProfiles,
+    summaries);
+graphGenerator.SaveOverallRanking(
+    Path.Combine(outputDirectory, "overall-ranking.png"),
+    ranking);
+graphGenerator.SaveAverageTurnsHeatmap(
+    Path.Combine(outputDirectory, "average-turns-heatmap.png"),
+    rankedProfiles,
     summaries);
 
 Console.WriteLine($"- {Path.Combine(outputDirectory, "game-results.csv")}");
 Console.WriteLine($"- {Path.Combine(outputDirectory, "matchup-summary.csv")}");
+Console.WriteLine($"- {Path.Combine(outputDirectory, "overall-ranking.csv")}");
 Console.WriteLine($"- {Path.Combine(outputDirectory, "winrate-matrix.csv")}");
-Console.WriteLine($"- {Path.Combine(outputDirectory, "winrate.png")}");
+Console.WriteLine($"- {Path.Combine(outputDirectory, "average-turns-matrix.csv")}");
+Console.WriteLine($"- {Path.Combine(outputDirectory, "pairwise-winrate-heatmap.png")}");
+Console.WriteLine($"- {Path.Combine(outputDirectory, "overall-ranking.png")}");
+Console.WriteLine($"- {Path.Combine(outputDirectory, "average-turns-heatmap.png")}");
