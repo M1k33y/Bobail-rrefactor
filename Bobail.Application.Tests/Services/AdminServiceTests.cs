@@ -2,6 +2,7 @@ using Bobail.Application.DTOs;
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
 using Bobail.Application.Services;
+using Bobail.Domain.Games;
 using Bobail.Domain.Users;
 using Moq;
 
@@ -77,7 +78,10 @@ public class AdminServiceTests
             .Setup(x => x.UpdateAsync(It.IsAny<User>()))
             .Callback<User>(candidate => updatedUser = candidate);
         onlineGameServiceMock
-            .Setup(x => x.ForfeitActiveGamesForUserAsync(user.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ForfeitActiveGamesForUserAsync(
+                user.Id,
+                It.IsAny<CancellationToken>(),
+                GameEndReason.AdminBan))
             .ReturnsAsync(new List<GameResponse>());
 
         var service = CreateService(userRepositoryMock, onlineGameServiceMock);
@@ -88,7 +92,10 @@ public class AdminServiceTests
         Assert.NotNull(updatedUser);
         Assert.False(updatedUser!.IsActive);
         onlineGameServiceMock.Verify(
-            x => x.ForfeitActiveGamesForUserAsync(user.Id, It.IsAny<CancellationToken>()),
+            x => x.ForfeitActiveGamesForUserAsync(
+                user.Id,
+                It.IsAny<CancellationToken>(),
+                GameEndReason.AdminBan),
             Times.Once);
     }
 

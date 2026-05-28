@@ -115,6 +115,7 @@ public class GameRulesTests
 
         game.Status.Should().Be(GameStatus.Finished);
         game.Winner.Should().Be(PlayerColor.Red);
+        game.EndReason.Should().Be(GameEndReason.Victory);
     }
 
     [Fact]
@@ -139,6 +140,7 @@ public class GameRulesTests
 
         game.Status.Should().Be(GameStatus.Finished);
         game.Winner.Should().Be(PlayerColor.Red);
+        game.EndReason.Should().Be(GameEndReason.Victory);
     }
 
     private static void MoveBobailTo(Game game, Position target)

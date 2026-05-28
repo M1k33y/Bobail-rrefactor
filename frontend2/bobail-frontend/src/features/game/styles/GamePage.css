@@ -31,6 +31,74 @@
   color: #86efac;
 }
 
+.online-game-id-stack {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.online-game-id-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.online-game-id-group span {
+  overflow-wrap: anywhere;
+}
+
+.online-copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.online-copy-button:hover {
+  border-color: rgba(134, 239, 172, 0.65);
+  color: #86efac;
+  background: rgba(134, 239, 172, 0.11);
+}
+
+.online-copy-feedback {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  transform: translateX(-50%);
+  min-height: 24px;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid rgba(134, 239, 172, 0.5);
+  border-radius: 8px;
+  color: #86efac;
+  background: rgba(9, 35, 25, 0.95);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  font-size: 0.82rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.online-copy-feedback.error {
+  border-color: rgba(254, 202, 202, 0.5);
+  color: #fecaca;
+  background: rgba(52, 18, 18, 0.95);
+}
+
 .online-connecting,
 .online-waiting {
   color: #fde68a;
@@ -39,6 +107,74 @@
 .online-error {
   color: #fecaca;
   font-size: 0.9rem;
+}
+
+.online-clock-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.online-clock-row-top {
+  margin-bottom: -0.75rem;
+}
+
+.online-clock-row-bottom {
+  margin-top: -0.75rem;
+}
+
+.online-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.online-clock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 180px;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.online-clock span {
+  font-size: 0.82rem;
+  opacity: 0.78;
+}
+
+.online-clock strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.online-clock.active {
+  border-color: rgba(134, 239, 172, 0.65);
+  background: rgba(134, 239, 172, 0.11);
+}
+
+.resign-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 42px;
+  padding-inline: 1rem;
+}
+
+.resign-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
 }
 
 @keyframes pulse {

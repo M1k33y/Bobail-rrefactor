@@ -50,6 +50,17 @@ public class SqlGameRepository : IGameRepository
         return game;
     }
 
+    public async Task<IReadOnlyList<Guid>> GetInProgressOnlineGameIdsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Games
+            .Where(x =>
+                x.Mode == (int)GameMode.OnlineMultiplayer &&
+                x.Status == (int)GameStatus.InProgress)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task UpdateAsync(Game game, CancellationToken cancellationToken = default)
     {
 

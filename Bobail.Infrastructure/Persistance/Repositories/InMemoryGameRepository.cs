@@ -22,6 +22,19 @@ public class InMemoryGameRepository : IGameRepository
         return Task.FromResult(game);
     }
 
+    public Task<IReadOnlyList<Guid>> GetInProgressOnlineGameIdsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Guid> gameIds = _storage.Values
+            .Where(x =>
+                x.Mode == GameMode.OnlineMultiplayer &&
+                x.Status == GameStatus.InProgress)
+            .Select(x => x.Id)
+            .ToList();
+
+        return Task.FromResult(gameIds);
+    }
+
     public Task UpdateAsync(Game game, CancellationToken cancellationToken = default)
     {
         if (!_storage.ContainsKey(game.Id))

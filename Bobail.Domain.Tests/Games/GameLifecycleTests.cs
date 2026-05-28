@@ -51,6 +51,18 @@ public class GameLifecycleTests
             .WithMessage("Game is not active.");
     }
 
+    [Fact]
+    public void Finish_Records_End_Reason()
+    {
+        var game = new Game();
+
+        game.Finish(PlayerColor.Green, GameEndReason.Timeout);
+
+        game.Status.Should().Be(GameStatus.Finished);
+        game.Winner.Should().Be(PlayerColor.Green);
+        game.EndReason.Should().Be(GameEndReason.Timeout);
+    }
+
     private static Position P(int row, int column)
     {
         return new Position(row, column);

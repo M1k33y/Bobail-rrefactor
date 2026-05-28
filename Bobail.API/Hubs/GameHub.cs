@@ -134,6 +134,45 @@ public class GameHub : Hub
                 Context.ConnectionAborted));
     }
 
+    public async Task ResignGame(string gameId)
+    {
+        if (!await EnsureActiveUserAsync())
+            return;
+
+        if (!TryParseGameId(gameId, out var parsedGameId))
+        {
+            await SendErrorAsync("ResignRejected", "Invalid game id.");
+            return;
+        }
+
+        try
+        {
+            var game = await _onlineGameService.ResignGameAsync(
+                parsedGameId,
+                Context.User!.GetUserId(),
+                Context.ConnectionAborted);
+            var groupName = GetGroupName(parsedGameId);
+
+            await Clients.Group(groupName).SendAsync(
+                "GameEnded",
+                game,
+                Context.ConnectionAborted);
+        }
+        catch (Exception ex) when (IsExpectedClientError(ex))
+        {
+            await SendErrorAsync("ResignRejected", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Unexpected error while resigning game. GameId: {GameId}",
+                gameId);
+
+            await SendErrorAsync("ResignRejected", "Unable to resign game.");
+        }
+    }
+
     private async Task ExecuteMoveAsync(
         string gameId,
         string moveType,
@@ -227,10 +266,12 @@ public class GameHub : Hub
             Status = state.Status,
             CurrentTurn = state.CurrentTurn,
             Winner = state.Winner,
+            EndReason = state.EndReason,
             IsFirstTurn = state.IsFirstTurn,
             CurrentPhase = state.CurrentPhase,
             Mode = state.Mode,
             BotColor = state.BotColor,
+            Clock = state.Clock,
             Pieces = state.Pieces.Select(p => new PieceDto
             {
                 Type = p.Type,

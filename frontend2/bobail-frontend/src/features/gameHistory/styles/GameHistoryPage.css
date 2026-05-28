@@ -82,6 +82,18 @@
   font-weight: 700;
 }
 
+.history-result-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.history-end-reason {
+  color: var(--mutedText);
+  font-size: 13px;
+}
+
 .history-result.win {
   color: var(--success);
 }

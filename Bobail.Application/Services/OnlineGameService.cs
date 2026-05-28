@@ -14,6 +14,8 @@ public class OnlineGameService : IOnlineGameService
     private readonly IGameStateRepository _gameStateRepository;
     private readonly IGamePlayerRepository _gamePlayerRepository;
     private readonly IGameLockManager _gameLockManager;
+    private readonly IOnlineGameClockService _clockService;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<OnlineGameService> _logger;
 
     public OnlineGameService(
@@ -21,12 +23,16 @@ public class OnlineGameService : IOnlineGameService
         IGameStateRepository gameStateRepository,
         IGamePlayerRepository gamePlayerRepository,
         IGameLockManager gameLockManager,
+        IOnlineGameClockService clockService,
+        TimeProvider timeProvider,
         ILogger<OnlineGameService> logger)
     {
         _gameRepository = gameRepository;
         _gameStateRepository = gameStateRepository;
         _gamePlayerRepository = gamePlayerRepository;
         _gameLockManager = gameLockManager;
+        _clockService = clockService;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -70,9 +76,19 @@ public class OnlineGameService : IOnlineGameService
 
         foreach (var gameId in gameIds)
         {
+            using var gameLock = await _gameLockManager.AcquireAsync(
+                gameId,
+                cancellationToken);
+
             var game = await _gameRepository.GetByIdAsync(gameId, cancellationToken);
 
-            if (game?.Status == GameStatus.InProgress)
+            if (game?.Status != GameStatus.InProgress)
+                continue;
+
+            if (await RefreshClockAsync(game, GetUtcNow(), cancellationToken))
+                continue;
+
+            if (game.Status == GameStatus.InProgress)
                 return gameId;
         }
 
@@ -122,10 +138,11 @@ public class OnlineGameService : IOnlineGameService
         if (playerCount == 2 && game.Status == GameStatus.WaitingForPlayers)
         {
             game.Start();
+            _clockService.StartClock(game, GetUtcNow());
             await _gameRepository.UpdateAsync(game, cancellationToken);
         }
 
-        return GameResponseMapper.ToResponse(game, playerColor);
+        return GameResponseMapper.ToResponse(game, playerColor, GetUtcNow());
     }
 
     public async Task<GameResponse> GetGameStateForUserAsync(
@@ -133,10 +150,15 @@ public class OnlineGameService : IOnlineGameService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
+        using var gameLock = await _gameLockManager.AcquireAsync(gameId, cancellationToken);
+
         var game = await GetOnlineGameAsync(gameId, cancellationToken);
         var playerColor = await RequirePlayerColorAsync(gameId, userId, cancellationToken);
 
-        return GameResponseMapper.ToResponse(game, playerColor);
+        if (await RefreshClockAsync(game, GetUtcNow(), cancellationToken))
+            game = await GetOnlineGameAsync(gameId, cancellationToken);
+
+        return GameResponseMapper.ToResponse(game, playerColor, GetUtcNow());
     }
 
     public async Task<OnlineGameMoveResult> ExecutePlayerMoveAsync(
@@ -149,14 +171,26 @@ public class OnlineGameService : IOnlineGameService
 
         var game = await GetOnlineGameAsync(gameId, cancellationToken);
         var playerColor = await RequirePlayerColorAsync(gameId, userId, cancellationToken);
+        var now = GetUtcNow();
+        var timeoutResult = await FinishIfTimedOutAsync(
+            game,
+            "PlayerMove",
+            now,
+            cancellationToken);
+
+        if (timeoutResult is not null)
+            return timeoutResult;
 
         EnsureCanMove(game, playerColor);
+        var movingPlayer = game.CurrentTurn;
 
         game.ExecutePlayerMove(
             new Position(request.FromRow, request.FromColumn),
             new Position(request.ToRow, request.ToColumn));
 
-        await PersistMoveAsync(game, cancellationToken);
+        _clockService.CommitSuccessfulMove(game, movingPlayer, now);
+
+        await PersistStateChangeAsync(game, cancellationToken);
 
         _logger.LogInformation(
             "Online player move. GameId: {GameId}, UserId: {UserId}, Color: {PlayerColor}",
@@ -164,7 +198,7 @@ public class OnlineGameService : IOnlineGameService
             userId,
             playerColor);
 
-        return ToMoveResult("PlayerMove", playerColor, game);
+        return ToMoveResult("PlayerMove", playerColor, game, now);
     }
 
     public async Task<OnlineGameMoveResult> ExecuteBobailMoveAsync(
@@ -177,12 +211,24 @@ public class OnlineGameService : IOnlineGameService
 
         var game = await GetOnlineGameAsync(gameId, cancellationToken);
         var playerColor = await RequirePlayerColorAsync(gameId, userId, cancellationToken);
+        var now = GetUtcNow();
+        var timeoutResult = await FinishIfTimedOutAsync(
+            game,
+            "BobailMove",
+            now,
+            cancellationToken);
+
+        if (timeoutResult is not null)
+            return timeoutResult;
 
         EnsureCanMove(game, playerColor);
+        var movingPlayer = game.CurrentTurn;
 
         game.ExecuteBobailMove(new Position(request.ToRow, request.ToColumn));
 
-        await PersistMoveAsync(game, cancellationToken);
+        _clockService.CommitSuccessfulMove(game, movingPlayer, now);
+
+        await PersistStateChangeAsync(game, cancellationToken);
 
         _logger.LogInformation(
             "Online Bobail move. GameId: {GameId}, UserId: {UserId}, Color: {PlayerColor}",
@@ -190,12 +236,49 @@ public class OnlineGameService : IOnlineGameService
             userId,
             playerColor);
 
-        return ToMoveResult("BobailMove", playerColor, game);
+        return ToMoveResult("BobailMove", playerColor, game, now);
+    }
+
+    public async Task<GameResponse> ResignGameAsync(
+        Guid gameId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        using var gameLock = await _gameLockManager.AcquireAsync(gameId, cancellationToken);
+
+        var game = await GetOnlineGameAsync(gameId, cancellationToken);
+        var playerColor = await RequirePlayerColorAsync(gameId, userId, cancellationToken);
+        var now = GetUtcNow();
+        var timeoutResult = await FinishIfTimedOutAsync(
+            game,
+            "Resign",
+            now,
+            cancellationToken);
+
+        if (timeoutResult is not null)
+            return timeoutResult.Game;
+
+        EnsureCanResign(game, playerColor);
+
+        game.Finish(
+            GetOpponentColor(playerColor),
+            GameEndReason.Resignation);
+
+        await PersistStateChangeAsync(game, cancellationToken);
+
+        _logger.LogInformation(
+            "Online player resigned. GameId: {GameId}, UserId: {UserId}, Color: {PlayerColor}",
+            gameId,
+            userId,
+            playerColor);
+
+        return GameResponseMapper.ToResponse(game, playerColor, now);
     }
 
     public async Task<IReadOnlyList<GameResponse>> ForfeitActiveGamesForUserAsync(
         Guid userId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        GameEndReason endReason = GameEndReason.Forfeit)
     {
         var gameIds = await _gamePlayerRepository.GetActiveOnlineGameIdsForUserAsync(
             userId,
@@ -226,18 +309,52 @@ public class OnlineGameService : IOnlineGameService
             if (humanPlayerCount < 2)
             {
                 game.Abandon();
-                await PersistMoveAsync(game, cancellationToken);
+                await PersistStateChangeAsync(game, cancellationToken);
                 continue;
             }
 
             var winner = GetOpponentColor(forfeitingColor.Value);
-            game.Finish(winner);
+            game.Finish(winner, endReason);
 
-            await PersistMoveAsync(game, cancellationToken);
-            finishedGames.Add(GameResponseMapper.ToResponse(game));
+            await PersistStateChangeAsync(game, cancellationToken);
+            finishedGames.Add(GameResponseMapper.ToResponse(game, serverTimeUtc: GetUtcNow()));
         }
 
         return finishedGames;
+    }
+
+    public async Task<IReadOnlyList<GameResponse>> ExpireTimedOutGamesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var gameIds = await _gameRepository.GetInProgressOnlineGameIdsAsync(cancellationToken);
+        var expiredGames = new List<GameResponse>();
+
+        foreach (var gameId in gameIds)
+        {
+            using var gameLock = await _gameLockManager.AcquireAsync(gameId, cancellationToken);
+            var game = await GetOnlineGameAsync(gameId, cancellationToken);
+            var now = GetUtcNow();
+
+            if (game.Clock is null)
+            {
+                _clockService.StartClock(game, now);
+                await PersistStateChangeAsync(game, cancellationToken);
+                continue;
+            }
+
+            if (!_clockService.FinishIfTimedOut(game, now))
+                continue;
+
+            await PersistStateChangeAsync(game, cancellationToken);
+            expiredGames.Add(GameResponseMapper.ToResponse(game, serverTimeUtc: now));
+
+            _logger.LogInformation(
+                "Online game expired on time. GameId: {GameId}, Winner: {Winner}",
+                game.Id,
+                game.Winner);
+        }
+
+        return expiredGames;
     }
 
     private async Task AbandonWaitingOnlineGamesForUserAsync(
@@ -261,7 +378,7 @@ public class OnlineGameService : IOnlineGameService
                 continue;
 
             game.Abandon();
-            await PersistMoveAsync(game, cancellationToken);
+            await PersistStateChangeAsync(game, cancellationToken);
         }
     }
 
@@ -305,7 +422,61 @@ public class OnlineGameService : IOnlineGameService
             throw new DomainException("It is not your turn.");
     }
 
-    private async Task PersistMoveAsync(
+    private static void EnsureCanResign(Game game, PlayerColor playerColor)
+    {
+        if (game.Status != GameStatus.InProgress)
+            throw new DomainException("Game is not active.");
+
+        if (game.CurrentTurn != playerColor)
+            throw new DomainException("You can resign only on your turn.");
+    }
+
+    private async Task<bool> RefreshClockAsync(
+        Game game,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (game.Status != GameStatus.InProgress)
+            return false;
+
+        if (game.Clock is null)
+        {
+            _clockService.StartClock(game, now);
+            await PersistStateChangeAsync(game, cancellationToken);
+            return false;
+        }
+
+        if (!_clockService.FinishIfTimedOut(game, now))
+            return false;
+
+        await PersistStateChangeAsync(game, cancellationToken);
+        return true;
+    }
+
+    private async Task<OnlineGameMoveResult?> FinishIfTimedOutAsync(
+        Game game,
+        string requestedMoveType,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var timedOutPlayer = _clockService.GetTimedOutPlayer(game, now);
+
+        if (!timedOutPlayer.HasValue)
+            return null;
+
+        _clockService.FinishIfTimedOut(game, now);
+        await PersistStateChangeAsync(game, cancellationToken);
+
+        _logger.LogInformation(
+            "Online move rejected because clock expired. GameId: {GameId}, RequestedMoveType: {MoveType}, TimedOutPlayer: {PlayerColor}",
+            game.Id,
+            requestedMoveType,
+            timedOutPlayer);
+
+        return ToMoveResult("Timeout", timedOutPlayer.Value, game, now);
+    }
+
+    private async Task PersistStateChangeAsync(
         Game game,
         CancellationToken cancellationToken)
     {
@@ -316,14 +487,20 @@ public class OnlineGameService : IOnlineGameService
     private static OnlineGameMoveResult ToMoveResult(
         string moveType,
         PlayerColor playerColor,
-        Game game)
+        Game game,
+        DateTimeOffset now)
     {
         return new OnlineGameMoveResult
         {
             MoveType = moveType,
             PlayerColor = playerColor.ToString(),
-            Game = GameResponseMapper.ToResponse(game)
+            Game = GameResponseMapper.ToResponse(game, serverTimeUtc: now)
         };
+    }
+
+    private DateTimeOffset GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().ToUniversalTime();
     }
 
     private static PlayerColor GetOpponentColor(PlayerColor playerColor)

@@ -200,8 +200,222 @@ public class OnlineGameServiceTests
         game.Status.Should().Be(GameStatus.InProgress);
         response.PlayerColor.Should().Be("Green");
         response.Status.Should().Be(GameStatus.InProgress.ToString());
+        response.Clock.Should().NotBeNull();
+        response.Clock!.RedRemainingMilliseconds.Should().Be(180_000);
+        response.Clock.GreenRemainingMilliseconds.Should().Be(180_000);
         gameRepository.Verify(
             x => x.UpdateAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecutePlayerMoveAsync_Deducts_Elapsed_Time_From_Moving_Player()
+    {
+        var timeProvider = new TestTimeProvider(DateTimeOffset.Parse("2026-05-28T12:00:00Z"));
+        var game = StartedOnlineGame();
+        game.StartClock(TimeControl.Create(TimeSpan.FromMinutes(3)), timeProvider.GetUtcNow());
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository,
+            timeProvider: timeProvider);
+        var userId = Guid.NewGuid();
+
+        gameRepository
+            .Setup(x => x.GetByIdAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(game);
+        gamePlayerRepository
+            .Setup(x => x.GetPlayerColorAsync(game.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Red);
+
+        timeProvider.Advance(TimeSpan.FromSeconds(2));
+
+        var result = await service.ExecutePlayerMoveAsync(
+            game.Id,
+            userId,
+            new PlayerMoveRequest { FromRow = 0, FromColumn = 0, ToRow = 3, ToColumn = 0 });
+
+        result.Game.Clock.Should().NotBeNull();
+        result.Game.Clock!.RedRemainingMilliseconds.Should().Be(178_000);
+        result.Game.Clock.GreenRemainingMilliseconds.Should().Be(180_000);
+        result.Game.CurrentTurn.Should().Be(PlayerColor.Green.ToString());
+        game.Clock!.TurnStartedAtUtc.Should().Be(timeProvider.GetUtcNow());
+    }
+
+    [Fact]
+    public async Task ExecuteBobailMoveAsync_Keeps_Same_Player_Clock_Running_For_Player_Phase()
+    {
+        var timeProvider = new TestTimeProvider(DateTimeOffset.Parse("2026-05-28T12:00:00Z"));
+        var game = StartedOnlineGame();
+        game.StartClock(TimeControl.Create(TimeSpan.FromMinutes(3)), timeProvider.GetUtcNow());
+        game.ExecutePlayerMove(P(0, 0), P(3, 0));
+        game.Clock!.CommitElapsed(PlayerColor.Red, timeProvider.GetUtcNow());
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository,
+            timeProvider: timeProvider);
+        var userId = Guid.NewGuid();
+
+        gameRepository
+            .Setup(x => x.GetByIdAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(game);
+        gamePlayerRepository
+            .Setup(x => x.GetPlayerColorAsync(game.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Green);
+
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
+
+        var bobailResult = await service.ExecuteBobailMoveAsync(
+            game.Id,
+            userId,
+            new BobailMoveRequest { ToRow = 2, ToColumn = 1 });
+
+        bobailResult.Game.CurrentTurn.Should().Be(PlayerColor.Green.ToString());
+        bobailResult.Game.CurrentPhase.Should().Be(TurnPhase.PlayerMoveRequired.ToString());
+        bobailResult.Game.Clock!.GreenRemainingMilliseconds.Should().Be(179_000);
+
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
+
+        var playerResult = await service.ExecutePlayerMoveAsync(
+            game.Id,
+            userId,
+            new PlayerMoveRequest { FromRow = 4, FromColumn = 1, ToRow = 3, ToColumn = 1 });
+
+        playerResult.Game.CurrentTurn.Should().Be(PlayerColor.Red.ToString());
+        playerResult.Game.Clock!.GreenRemainingMilliseconds.Should().Be(178_000);
+    }
+
+    [Fact]
+    public async Task ExecutePlayerMoveAsync_When_Clock_Is_Expired_Finishes_Game_For_Opponent()
+    {
+        var timeProvider = new TestTimeProvider(DateTimeOffset.Parse("2026-05-28T12:00:00Z"));
+        var game = StartedOnlineGame();
+        game.StartClock(TimeControl.Create(TimeSpan.FromMinutes(3)), timeProvider.GetUtcNow());
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository,
+            timeProvider: timeProvider);
+        var userId = Guid.NewGuid();
+
+        gameRepository
+            .Setup(x => x.GetByIdAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(game);
+        gamePlayerRepository
+            .Setup(x => x.GetPlayerColorAsync(game.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Red);
+
+        timeProvider.Advance(TimeSpan.FromMinutes(3));
+
+        var result = await service.ExecutePlayerMoveAsync(
+            game.Id,
+            userId,
+            new PlayerMoveRequest { FromRow = 0, FromColumn = 0, ToRow = 3, ToColumn = 0 });
+
+        result.MoveType.Should().Be("Timeout");
+        result.PlayerColor.Should().Be(PlayerColor.Red.ToString());
+        result.Game.Status.Should().Be(GameStatus.Finished.ToString());
+        result.Game.Winner.Should().Be(PlayerColor.Green.ToString());
+        result.Game.EndReason.Should().Be(GameEndReason.Timeout.ToString());
+        result.Game.Clock!.RedRemainingMilliseconds.Should().Be(0);
+        gameRepository.Verify(
+            x => x.UpdateAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+        gameStateRepository.Verify(
+            x => x.AddSnapshotAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ExpireTimedOutGamesAsync_Finishes_Expired_Online_Games()
+    {
+        var timeProvider = new TestTimeProvider(DateTimeOffset.Parse("2026-05-28T12:00:00Z"));
+        var game = StartedOnlineGame();
+        game.StartClock(TimeControl.Create(TimeSpan.FromMinutes(3)), timeProvider.GetUtcNow());
+        var gameRepository = new Mock<IGameRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            timeProvider: timeProvider);
+
+        gameRepository
+            .Setup(x => x.GetInProgressOnlineGameIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid> { game.Id });
+        gameRepository
+            .Setup(x => x.GetByIdAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(game);
+
+        timeProvider.Advance(TimeSpan.FromMinutes(3));
+
+        var expiredGames = await service.ExpireTimedOutGamesAsync();
+
+        expiredGames.Should().ContainSingle();
+        expiredGames[0].Winner.Should().Be(PlayerColor.Green.ToString());
+        expiredGames[0].EndReason.Should().Be(GameEndReason.Timeout.ToString());
+        game.Status.Should().Be(GameStatus.Finished);
+        game.Winner.Should().Be(PlayerColor.Green);
+        game.EndReason.Should().Be(GameEndReason.Timeout);
+        gameRepository.Verify(
+            x => x.UpdateAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Timeout_Check_And_Move_Request_Are_Serialized_By_Game_Lock()
+    {
+        var timeProvider = new TestTimeProvider(DateTimeOffset.Parse("2026-05-28T12:00:00Z"));
+        var game = StartedOnlineGame();
+        game.StartClock(TimeControl.Create(TimeSpan.FromMinutes(3)), timeProvider.GetUtcNow());
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var lockManager = new InMemoryGameLockManager();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository,
+            lockManager: lockManager,
+            timeProvider: timeProvider);
+        var userId = Guid.NewGuid();
+
+        gameRepository
+            .Setup(x => x.GetInProgressOnlineGameIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid> { game.Id });
+        gameRepository
+            .Setup(x => x.GetByIdAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(game);
+        gamePlayerRepository
+            .Setup(x => x.GetPlayerColorAsync(game.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Red);
+
+        timeProvider.Advance(TimeSpan.FromMinutes(3));
+
+        var moveTask = service.ExecutePlayerMoveAsync(
+            game.Id,
+            userId,
+            new PlayerMoveRequest { FromRow = 0, FromColumn = 0, ToRow = 3, ToColumn = 0 });
+        var timeoutTask = service.ExpireTimedOutGamesAsync();
+
+        await Task.WhenAll(moveTask, timeoutTask);
+
+        game.Status.Should().Be(GameStatus.Finished);
+        game.Winner.Should().Be(PlayerColor.Green);
+        gameRepository.Verify(
+            x => x.UpdateAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+        gameStateRepository.Verify(
+            x => x.AddSnapshotAsync(game, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -444,6 +658,74 @@ public class OnlineGameServiceTests
     }
 
     [Fact]
+    public async Task ResignGameAsync_When_Player_Turn_Finishes_Game_For_Opponent()
+    {
+        var game = StartedOnlineGame();
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository);
+        var userId = Guid.NewGuid();
+
+        gameRepository
+            .Setup(x => x.GetByIdAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(game);
+        gamePlayerRepository
+            .Setup(x => x.GetPlayerColorAsync(game.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Red);
+
+        var result = await service.ResignGameAsync(game.Id, userId);
+
+        game.Status.Should().Be(GameStatus.Finished);
+        game.Winner.Should().Be(PlayerColor.Green);
+        game.EndReason.Should().Be(GameEndReason.Resignation);
+        result.Winner.Should().Be(PlayerColor.Green.ToString());
+        result.EndReason.Should().Be(GameEndReason.Resignation.ToString());
+        gameRepository.Verify(
+            x => x.UpdateAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+        gameStateRepository.Verify(
+            x => x.AddSnapshotAsync(game, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ResignGameAsync_When_Not_Player_Turn_Does_Not_Persist()
+    {
+        var game = StartedOnlineGame();
+        var gameRepository = new Mock<IGameRepository>();
+        var gamePlayerRepository = new Mock<IGamePlayerRepository>();
+        var gameStateRepository = new Mock<IGameStateRepository>();
+        var service = CreateService(
+            gameRepository,
+            gameStateRepository,
+            gamePlayerRepository);
+        var userId = Guid.NewGuid();
+
+        gameRepository
+            .Setup(x => x.GetByIdAsync(game.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(game);
+        gamePlayerRepository
+            .Setup(x => x.GetPlayerColorAsync(game.Id, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PlayerColor.Green);
+
+        var act = () => service.ResignGameAsync(game.Id, userId);
+
+        await act.Should()
+            .ThrowAsync<DomainException>()
+            .WithMessage("You can resign only on your turn.");
+        gameRepository.Verify(
+            x => x.UpdateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        gameStateRepository.Verify(
+            x => x.AddSnapshotAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task ForfeitActiveGamesForUserAsync_Finishes_Active_Game_For_Opponent()
     {
         var game = StartedOnlineGame();
@@ -474,7 +756,9 @@ public class OnlineGameServiceTests
         result.Should().ContainSingle();
         game.Status.Should().Be(GameStatus.Finished);
         game.Winner.Should().Be(PlayerColor.Green);
+        game.EndReason.Should().Be(GameEndReason.Forfeit);
         result[0].Winner.Should().Be(PlayerColor.Green.ToString());
+        result[0].EndReason.Should().Be(GameEndReason.Forfeit.ToString());
         gameRepository.Verify(
             x => x.UpdateAsync(game, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -487,12 +771,10 @@ public class OnlineGameServiceTests
         Mock<IGameRepository>? gameRepository = null,
         Mock<IGameStateRepository>? gameStateRepository = null,
         Mock<IGamePlayerRepository>? gamePlayerRepository = null,
-        Mock<IGameLockManager>? lockManager = null)
+        object? lockManager = null,
+        TestTimeProvider? timeProvider = null)
     {
-        lockManager ??= new Mock<IGameLockManager>();
-        lockManager
-            .Setup(x => x.AcquireAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new TestGameLock());
+        var resolvedLockManager = ResolveLockManager(lockManager);
         (gamePlayerRepository ??= new Mock<IGamePlayerRepository>())
             .Setup(x => x.GetActiveOnlineGameIdsForUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Guid>());
@@ -501,8 +783,26 @@ public class OnlineGameServiceTests
             (gameRepository ?? new Mock<IGameRepository>()).Object,
             (gameStateRepository ?? new Mock<IGameStateRepository>()).Object,
             gamePlayerRepository.Object,
-            lockManager.Object,
+            resolvedLockManager,
+            new OnlineGameClockService(),
+            timeProvider ?? new TestTimeProvider(DateTimeOffset.Parse("2026-05-28T12:00:00Z")),
             Mock.Of<ILogger<OnlineGameService>>());
+    }
+
+    private static IGameLockManager ResolveLockManager(object? lockManager)
+    {
+        if (lockManager is IGameLockManager concreteLockManager)
+            return concreteLockManager;
+
+        if (lockManager is Mock<IGameLockManager> providedMockLockManager)
+            return providedMockLockManager.Object;
+
+        var mockLockManager = new Mock<IGameLockManager>();
+        mockLockManager
+            .Setup(x => x.AcquireAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TestGameLock());
+
+        return mockLockManager.Object;
     }
 
     private static Game StartedOnlineGame()
@@ -524,6 +824,26 @@ public class OnlineGameServiceTests
         public void Dispose()
         {
             Disposed = true;
+        }
+    }
+
+    private sealed class TestTimeProvider : TimeProvider
+    {
+        private DateTimeOffset _utcNow;
+
+        public TestTimeProvider(DateTimeOffset utcNow)
+        {
+            _utcNow = utcNow.ToUniversalTime();
+        }
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            return _utcNow;
+        }
+
+        public void Advance(TimeSpan time)
+        {
+            _utcNow = _utcNow.Add(time);
         }
     }
 }

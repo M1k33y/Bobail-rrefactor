@@ -11,8 +11,102 @@ function formatPlayedAt(value) {
   }).format(new Date(value));
 }
 
-function getMoveLabel(moveNumber) {
-  return moveNumber === 0 ? "Start" : `Move ${moveNumber}`;
+function formatClock(milliseconds) {
+  const totalSeconds = Math.ceil(Math.max(0, milliseconds) / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function formatEndReason(endReason) {
+  switch (endReason) {
+    case "Timeout":
+      return "by timeout";
+    case "Resignation":
+      return "by resignation";
+    case "Forfeit":
+      return "by forfeit";
+    case "AdminBan":
+      return "after opponent ban";
+    default:
+      return null;
+  }
+}
+
+function formatFinishedCaption(state) {
+  const reason = formatEndReason(state.endReason);
+
+  return reason
+    ? `Winner: ${state.winner} ${reason}`
+    : `Winner: ${state.winner}`;
+}
+
+function hasSameBoardPosition(firstState, secondState) {
+  if (!firstState || !secondState) {
+    return false;
+  }
+
+  const firstPieces = [...(firstState.pieces || [])].sort(comparePieces);
+  const secondPieces = [...(secondState.pieces || [])].sort(comparePieces);
+
+  if (firstPieces.length !== secondPieces.length) {
+    return false;
+  }
+
+  return firstPieces.every((piece, index) => {
+    const other = secondPieces[index];
+
+    return (
+      piece.type === other.type &&
+      piece.owner === other.owner &&
+      piece.row === other.row &&
+      piece.column === other.column
+    );
+  });
+}
+
+function comparePieces(first, second) {
+  return `${first.type}:${first.owner || ""}:${first.row}:${first.column}`
+    .localeCompare(`${second.type}:${second.owner || ""}:${second.row}:${second.column}`);
+}
+
+function isFinishSnapshot(state, index, states) {
+  if (index === 0 || state.status !== "Finished") {
+    return false;
+  }
+
+  return hasSameBoardPosition(states[index - 1], state);
+}
+
+function getStateLabel(state, index, states) {
+  if (index === 0) {
+    return "Start";
+  }
+
+  return isFinishSnapshot(state, index, states)
+    ? "Finish"
+    : `Move ${state.moveNumber}`;
+}
+
+function getInitialOnlineClockMilliseconds(replay) {
+  return replay.states.find((state) => state.clock)?.clock?.initialTimeMilliseconds ?? null;
+}
+
+function getTimelineDetail(state, replay) {
+  if (state.mode === "OnlineMultiplayer" && state.clock) {
+    return `Red ${formatClock(state.clock.redRemainingMilliseconds)} / Green ${formatClock(state.clock.greenRemainingMilliseconds)}`;
+  }
+
+  if (state.mode === "OnlineMultiplayer") {
+    const initialTime = getInitialOnlineClockMilliseconds(replay);
+
+    if (initialTime !== null) {
+      return `Red ${formatClock(initialTime)} / Green ${formatClock(initialTime)}`;
+    }
+  }
+
+  return formatPlayedAt(state.createdAtUtc);
 }
 
 function GameReviewPage() {
@@ -63,6 +157,26 @@ function GameReviewPage() {
     return replay.states[currentIndex] ?? replay.states[0];
   }, [currentIndex, replay]);
 
+  const replayStateLabels = useMemo(() => {
+    if (!replay?.states?.length) {
+      return [];
+    }
+
+    return replay.states.map((state, index, states) =>
+      getStateLabel(state, index, states)
+    );
+  }, [replay]);
+
+  const moveCount = useMemo(() => {
+    if (!replay?.states?.length) {
+      return 0;
+    }
+
+    return replay.states.filter((state, index, states) =>
+      index > 0 && !isFinishSnapshot(state, index, states)
+    ).length;
+  }, [replay]);
+
   if (loading) {
     return <div className="review-status">Loading replay...</div>;
   }
@@ -74,6 +188,8 @@ function GameReviewPage() {
   if (!replay || !currentState) {
     return <div className="review-status">No replay data available for this game.</div>;
   }
+
+  const currentLabel = replayStateLabels[currentIndex] ?? getStateLabel(currentState, currentIndex, replay.states);
 
   return (
     <div className="review-page">
@@ -107,13 +223,15 @@ function GameReviewPage() {
             <div className="review-move-card">
               <p className="review-label">Current position</p>
               <h2>
-                {getMoveLabel(currentState.moveNumber)} / {replay.states.length - 1 < 0 ? 0 : replay.states.length - 1}
+                {currentLabel.startsWith("Move")
+                  ? `${currentLabel} / ${moveCount}`
+                  : currentLabel}
               </h2>
               <p className="review-caption">
                 {currentState.moveNumber === 0
                   ? "Initial board setup"
                   : currentState.status === "Finished"
-                    ? `Winner: ${currentState.winner}`
+                    ? formatFinishedCaption(currentState)
                     : `Turn: ${currentState.currentTurn}`}
               </p>
             </div>
@@ -152,8 +270,8 @@ function GameReviewPage() {
                   }`}
                   onClick={() => setCurrentIndex(index)}
                 >
-                  <span>{getMoveLabel(state.moveNumber)}</span>
-                  <span>{formatPlayedAt(state.createdAtUtc)}</span>
+                  <span>{replayStateLabels[index]}</span>
+                  <span className="review-timeline-detail">{getTimelineDetail(state, replay)}</span>
                 </button>
               ))}
             </div>

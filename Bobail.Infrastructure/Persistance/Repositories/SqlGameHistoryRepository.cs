@@ -93,6 +93,7 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
             var opponentName = ResolveOpponentName(opponent, users);
             var botDifficulty = ResolveBotDifficulty(game.Mode, game.BotDifficulty);
             var playedVs = BuildPlayedVsLabel(opponentName, botDifficulty);
+            var finishedState = GameSerializer.Deserialize(game.StateJson);
 
             return new GameHistoryResponse
             {
@@ -100,6 +101,7 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
                 OpponentName = opponentName,
                 PlayedVs = playedVs,
                 Result = game.WinnerUserId == userId ? "Win" : "Loss",
+                EndReason = finishedState.EndReason?.ToString(),
                 PlayedAtUtc = game.UpdatedAt,
                 Mode = ((Domain.Games.GameMode)game.Mode).ToString(),
                 BotDifficulty = botDifficulty
@@ -199,6 +201,7 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
         var opponentName = ResolveOpponentName(opponent, userMap);
         var botDifficulty = ResolveBotDifficulty(game.Mode, game.BotDifficulty);
         var playedVs = BuildPlayedVsLabel(opponentName, botDifficulty);
+        var finishedState = GameSerializer.Deserialize(game.StateJson);
 
         var states = await _gameStateRepository.GetByGameIdAsync(gameId, cancellationToken);
 
@@ -208,6 +211,7 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
             OpponentName = opponentName,
             PlayedVs = playedVs,
             Result = game.WinnerUserId == userId ? "Win" : "Loss",
+            EndReason = finishedState.EndReason?.ToString(),
             PlayedAtUtc = game.UpdatedAt,
             BotDifficulty = botDifficulty,
             States = states.Select(x =>
@@ -221,10 +225,12 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
                     Status = state.Status.ToString(),
                     CurrentTurn = state.CurrentTurn.ToString(),
                     Winner = state.Winner?.ToString(),
+                    EndReason = state.EndReason?.ToString(),
                     IsFirstTurn = state.IsFirstTurn,
                     CurrentPhase = state.CurrentPhase.ToString(),
                     Mode = state.Mode.ToString(),
                     BotColor = state.BotColor?.ToString(),
+                    Clock = ToReplayClockDto(state, x.CreatedAtUtc),
                     Pieces = state.Board.Pieces.Select(p => new PieceDto
                     {
                         Type = p.Type.ToString(),
@@ -234,6 +240,21 @@ public class SqlGameHistoryRepository : IGameHistoryRepository
                     }).ToList()
                 };
             }).ToList()
+        };
+    }
+
+    private static GameClockDto? ToReplayClockDto(Domain.Games.Game state, DateTime createdAtUtc)
+    {
+        if (state.Clock is null)
+            return null;
+
+        return new GameClockDto
+        {
+            InitialTimeMilliseconds = state.Clock.TimeControl.InitialTimeMilliseconds,
+            RedRemainingMilliseconds = state.Clock.RedRemainingMilliseconds,
+            GreenRemainingMilliseconds = state.Clock.GreenRemainingMilliseconds,
+            TurnStartedAtUtc = state.Clock.TurnStartedAtUtc,
+            ServerTimeUtc = new DateTimeOffset(DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc))
         };
     }
 

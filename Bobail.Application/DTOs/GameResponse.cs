@@ -9,6 +9,7 @@ public class GameResponse
     public string Status { get; set; } = string.Empty;
     public string CurrentTurn { get; set; } = string.Empty;
     public string? Winner { get; set; }
+    public string? EndReason { get; set; }
 
     public bool IsFirstTurn { get; set; }
 
@@ -16,9 +17,20 @@ public class GameResponse
     public string Mode { get; set; } = string.Empty;
     public string? BotColor { get; set; }
     public string? PlayerColor { get; set; }
+    public GameClockDto? Clock { get; set; }
 
     public List<PieceDto> Pieces { get; set; } = new();
 }
+
+public class GameClockDto
+{
+    public long InitialTimeMilliseconds { get; set; }
+    public long RedRemainingMilliseconds { get; set; }
+    public long GreenRemainingMilliseconds { get; set; }
+    public DateTimeOffset? TurnStartedAtUtc { get; set; }
+    public DateTimeOffset ServerTimeUtc { get; set; }
+}
+
 public class PieceDto
 {
     public string Type { get; set; } = string.Empty;
