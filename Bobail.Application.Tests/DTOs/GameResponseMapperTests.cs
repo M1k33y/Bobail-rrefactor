@@ -36,6 +36,7 @@ public class GameResponseMapperTests
         var response = GameResponseMapper.ToResponse(game);
 
         response.Winner.Should().Be(PlayerColor.Red.ToString());
+        response.EndReason.Should().Be(GameEndReason.Victory.ToString());
         response.PlayerColor.Should().BeNull();
         response.Pieces.Should().Contain(piece =>
             piece.Type == "Bobail" &&

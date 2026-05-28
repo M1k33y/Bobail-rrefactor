@@ -10,7 +10,9 @@ public class Game : Entity
     public bool IsFirstTurn { get; private set; }
     public GameStatus Status { get; private set; }
     public PlayerColor? Winner { get; private set; }
+    public GameEndReason? EndReason { get; private set; }
     public TurnPhase CurrentPhase { get; private set; }
+    public GameClock? Clock { get; private set; }
 
     public GameMode Mode { get; private set; }
     public BotDifficulty? BotDifficulty { get; private set; }
@@ -27,7 +29,9 @@ public class Game : Entity
     bool isFirstTurn,
     GameStatus status,
     TurnPhase currentPhase,
-    PlayerColor? winner)
+    PlayerColor? winner,
+    GameEndReason? endReason = null,
+    GameClock? clock = null)
     {
         Id = id; 
 
@@ -42,6 +46,8 @@ public class Game : Entity
         Status = status;
         CurrentPhase = currentPhase;
         Winner = winner;
+        EndReason = endReason;
+        Clock = clock;
     }
     public Game(
     GameMode mode = GameMode.LocalMultiplayer,
@@ -62,11 +68,15 @@ public class Game : Entity
         Mode = mode;
         BotDifficulty = botDifficulty;
         BotColor = botColor;
+        Clock = null;
+        EndReason = null;
     }
 
     public void Abandon()
     {
         Status = GameStatus.Abandoned;
+        EndReason = null;
+        Clock?.Stop();
     }
 
     public void Start()
@@ -78,6 +88,17 @@ public class Game : Entity
             return;
 
         Status = GameStatus.InProgress;
+    }
+
+    public void StartClock(TimeControl timeControl, DateTimeOffset startedAtUtc)
+    {
+        if (Mode != GameMode.OnlineMultiplayer)
+            throw new DomainException("Only online games can use an online clock.");
+
+        if (Status != GameStatus.InProgress)
+            throw new DomainException("Only active games can start a clock.");
+
+        Clock ??= GameClock.Start(timeControl, startedAtUtc);
     }
 
     public bool IsBotTurn()
@@ -94,10 +115,14 @@ public class Game : Entity
             : PlayerColor.Red;
     }
 
-    public void Finish(PlayerColor winner)
+    public void Finish(
+        PlayerColor winner,
+        GameEndReason endReason = GameEndReason.Victory)
     {
         Status = GameStatus.Finished;
         Winner = winner;
+        EndReason = endReason;
+        Clock?.Stop();
     }
 
     public List<Position> GetValidPlayerMoves(Position from)
@@ -166,6 +191,8 @@ public class Game : Entity
             IsFirstTurn,
             Status,
             CurrentPhase,
-            Winner);
+            Winner,
+            EndReason,
+            Clock?.Clone());
     }
 }

@@ -122,5 +122,18 @@ export const gameApi = {
         }
 
         return;
+    },
+
+    resign: async (gameId) => {
+        const res = await authFetch(`${API}/${gameId}/resign`, {
+            method: "POST"
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Failed to resign game.");
+        }
+
+        return res.json();
     }
 };

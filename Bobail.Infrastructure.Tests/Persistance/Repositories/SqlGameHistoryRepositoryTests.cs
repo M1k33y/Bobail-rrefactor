@@ -50,6 +50,7 @@ public class SqlGameHistoryRepositoryTests
         result.Items[0].OpponentName.Should().Be("BOT");
         result.Items[0].PlayedVs.Should().Be("BOT Hard");
         result.Items[0].Result.Should().Be("Win");
+        result.Items[0].EndReason.Should().Be(GameEndReason.Victory.ToString());
         result.Items[0].BotDifficulty.Should().Be("Hard");
     }
 
@@ -102,7 +103,67 @@ public class SqlGameHistoryRepositoryTests
         replay.States.Should().ContainSingle();
         replay.States[0].Status.Should().Be(GameStatus.Finished.ToString());
         replay.States[0].Winner.Should().Be(PlayerColor.Red.ToString());
+        replay.States[0].EndReason.Should().Be(GameEndReason.Victory.ToString());
         replay.States[0].Pieces.Should().HaveCount(11);
+    }
+
+    [Fact]
+    public async Task GetReplayAsync_Maps_Online_Clock_For_Replay_States()
+    {
+        using var db = InfrastructureTestDb.Create();
+        var redUserId = await AddUserAsync(db, "red");
+        var greenUserId = await AddUserAsync(db, "green");
+        var startedAtUtc = DateTimeOffset.Parse("2026-05-28T12:00:00Z");
+        var game = new Game(GameMode.OnlineMultiplayer);
+        game.Start();
+        game.StartClock(TimeControl.Create(TimeSpan.FromMinutes(3)), startedAtUtc);
+        game.Clock!.CommitElapsed(PlayerColor.Red, startedAtUtc.AddSeconds(2));
+        game.Finish(PlayerColor.Green, GameEndReason.Timeout);
+
+        db.Context.Games.Add(new GameEntity
+        {
+            Id = game.Id,
+            StateJson = GameSerializer.Serialize(game),
+            Status = (int)GameStatus.Finished,
+            CurrentTurn = (int)game.CurrentTurn,
+            Mode = (int)GameMode.OnlineMultiplayer,
+            WinnerUserId = greenUserId,
+            CreatedAt = DateTime.UtcNow.AddMinutes(-5),
+            UpdatedAt = DateTime.UtcNow
+        });
+
+        db.Context.GamePlayers.AddRange(
+            new GamePlayerEntity
+            {
+                Id = Guid.NewGuid(),
+                GameId = game.Id,
+                UserId = redUserId,
+                Color = (int)PlayerColor.Red,
+                IsBot = false
+            },
+            new GamePlayerEntity
+            {
+                Id = Guid.NewGuid(),
+                GameId = game.Id,
+                UserId = greenUserId,
+                Color = (int)PlayerColor.Green,
+                IsBot = false
+            });
+
+        await db.Context.SaveChangesAsync();
+        await new SqlGameStateRepository(db.Context).AddSnapshotAsync(game);
+        var repository = CreateRepository(db);
+
+        var replay = await repository.GetReplayAsync(game.Id, redUserId);
+
+        replay.Should().NotBeNull();
+        replay!.States.Should().ContainSingle();
+        replay.States[0].Clock.Should().NotBeNull();
+        var clock = replay.States[0].Clock!;
+        clock.RedRemainingMilliseconds.Should().Be(178_000);
+        clock.GreenRemainingMilliseconds.Should().Be(180_000);
+        replay.EndReason.Should().Be(GameEndReason.Timeout.ToString());
+        replay.States[0].EndReason.Should().Be(GameEndReason.Timeout.ToString());
     }
 
     private static SqlGameHistoryRepository CreateRepository(InfrastructureTestDb db)

@@ -133,6 +133,15 @@ public class GamesController : ControllerBase
             playerColor = await _gamePlayerRepository.GetPlayerColorAsync(
                 id,
                 User.GetUserId());
+
+            if (game.Mode == GameMode.OnlineMultiplayer && playerColor.HasValue)
+            {
+                var onlineState = await _onlineGameService.GetGameStateForUserAsync(
+                    id,
+                    User.GetUserId());
+
+                return Ok(onlineState);
+            }
         }
 
         var response = GameResponseMapper.ToResponse(game, playerColor);
@@ -192,6 +201,25 @@ public class GamesController : ControllerBase
             request.ToColumn);
 
         return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("{id:guid}/resign")]
+    public async Task<ActionResult<GameResponse>> ResignGame(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var game = await _gameService.GetGameAsync(id, cancellationToken);
+
+        if (game.Mode != GameMode.OnlineMultiplayer)
+            return BadRequest(new { error = "Only online games can be resigned." });
+
+        var state = await _onlineGameService.ResignGameAsync(
+            id,
+            User.GetUserId(),
+            cancellationToken);
+
+        return Ok(state);
     }
 
 

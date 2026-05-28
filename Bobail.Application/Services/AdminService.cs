@@ -1,6 +1,7 @@
 using Bobail.Application.DTOs;
 using Bobail.Application.Interfaces.Repositories;
 using Bobail.Application.Interfaces.Services;
+using Bobail.Domain.Games;
 using Bobail.Domain.Users;
 
 namespace Bobail.Application.Services;
@@ -86,7 +87,8 @@ public class AdminService : IAdminService
 
         var finishedGames = await _onlineGameService.ForfeitActiveGamesForUserAsync(
             user.Id,
-            cancellationToken);
+            cancellationToken,
+            GameEndReason.AdminBan);
 
         return new BanUserResponse
         {

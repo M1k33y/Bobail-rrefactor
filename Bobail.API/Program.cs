@@ -84,6 +84,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IOnlineGameService, OnlineGameService>();
+builder.Services.AddSingleton<IOnlineGameClockService, OnlineGameClockService>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IBotService, BotService>();
 builder.Services.AddSingleton<IGameLockManager, InMemoryGameLockManager>();
 builder.Services.AddSingleton<IGameConnectionTracker, InMemoryGameConnectionTracker>();
@@ -113,6 +115,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSignalR();
+builder.Services.AddHostedService<OnlineGameTimeoutHostedService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

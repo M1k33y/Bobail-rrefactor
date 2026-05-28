@@ -9,8 +9,16 @@ function mergeGameState(nextGame, previousGame) {
     return previousGame;
   }
 
+  const clock = nextGame.clock
+    ? {
+        ...nextGame.clock,
+        receivedAtMs: Date.now(),
+      }
+    : nextGame.clock;
+
   return {
     ...nextGame,
+    clock,
     playerColor: nextGame.playerColor || previousGame?.playerColor || null,
   };
 }
@@ -85,6 +93,10 @@ export function useGame(gameId) {
     });
     connection.on("MoveRejected", (error) => {
       setOnlineError(error?.message || "Move rejected.");
+      clearSelection();
+    });
+    connection.on("ResignRejected", (error) => {
+      setOnlineError(error?.message || "Unable to resign game.");
       clearSelection();
     });
     connection.on("JoinRejected", (error) => {
@@ -295,6 +307,35 @@ if (!isOnlineGame) {
     }
   }
 
+  async function handleResign() {
+    if (!game || game.status !== "InProgress") return;
+
+    const isOnlinePlayerTurn =
+      game.mode === "OnlineMultiplayer" &&
+      game.playerColor &&
+      game.playerColor === game.currentTurn;
+
+    if (!isOnlinePlayerTurn) return;
+
+    try {
+      const connection = connectionRef.current;
+
+      if (!connection || connection.state !== HubConnectionState.Connected) {
+        setOnlineError("Realtime connection is not ready.");
+        clearSelection();
+        return;
+      }
+
+      await connection.invoke("ResignGame", gameId);
+      clearSelection();
+      setOnlineError("");
+    } catch (err) {
+      console.error("Resign error:", err);
+      setOnlineError(err.message || "Resign failed.");
+      clearSelection();
+    }
+  }
+
   return {
     game,
     selected,
@@ -302,5 +343,6 @@ if (!isOnlineGame) {
     onlineError,
     isRealtimeConnected,
     handleCellClick,
+    handleResign,
   };
 }

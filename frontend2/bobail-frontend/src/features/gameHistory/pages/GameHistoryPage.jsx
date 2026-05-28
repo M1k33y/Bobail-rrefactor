@@ -12,6 +12,21 @@ function formatPlayedAt(value) {
   }).format(new Date(value));
 }
 
+function formatEndReason(endReason) {
+  switch (endReason) {
+    case "Timeout":
+      return "By timeout";
+    case "Resignation":
+      return "By resignation";
+    case "Forfeit":
+      return "By forfeit";
+    case "AdminBan":
+      return "Opponent banned";
+    default:
+      return null;
+  }
+}
+
 function GameHistoryPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -108,8 +123,15 @@ function GameHistoryPage() {
                   <div className="history-main">
                     <div className="history-label">Played vs:</div>
                     <div className="history-opponent">{game.playedVs}</div>
-                    <div className={`history-result ${game.result.toLowerCase()}`}>
-                      {game.result}
+                    <div className="history-result-line">
+                      <span className={`history-result ${game.result.toLowerCase()}`}>
+                        {game.result}
+                      </span>
+                      {formatEndReason(game.endReason) && (
+                        <span className="history-end-reason">
+                          {formatEndReason(game.endReason)}
+                        </span>
+                      )}
                     </div>
                   </div>
 
