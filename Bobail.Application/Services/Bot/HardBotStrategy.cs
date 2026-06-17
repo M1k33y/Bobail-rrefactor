@@ -33,8 +33,8 @@ public class HardBotStrategy : IBotStrategy
     private const int RootMoveLimit = 8;
     private const int MaxDepth = 4;
     private const int CandidatePoolSize = 3;
-    private const int ScoreWindow = 200;
-    private const double NearBestRandomizerChance = 0.1; //de schimbat la eval 0.10
+    private const int ScoreWindow = 1000;
+    private const double NearBestRandomizerChance = 0.05; //de schimbat la eval 0.10
     private const int ImmediateThreatPenalty = 250_000;
     private const int ForcedWinBonus = 180_000;
     private const int BackwardBobailPenalty = 1_400;

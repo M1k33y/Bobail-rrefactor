@@ -1,0 +1,6 @@
+﻿Bot \ Opponent (win-rate %),bot8,Hard_Default,bot7,bot6,bot5
+bot8,self,46.67,52.33,84.33,86.00
+Hard_Default,49.33,self,53.67,87.33,80.00
+bot7,13.67,15.67,self,47.00,92.33
+bot6,15.33,11.33,49.67,self,94.00
+bot5,12.33,19.00,7.33,5.67,self

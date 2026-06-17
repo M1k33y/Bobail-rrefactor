@@ -38,28 +38,28 @@
 }
 
 
-.difficulty-easy {
+.bot-config-card .difficulty-easy {
   background: #1e7e34;
   color: white;
 }
 
-.difficulty-medium {
+.bot-config-card .difficulty-medium {
   background: #d97706;
   color: white;
 }
 
-.difficulty-hard {
+.bot-config-card .difficulty-hard {
   background: #b91c1c;
   color: white;
 }
 
 
-.color-red {
+.bot-config-card .color-red {
   background: #b91c1c;
   color: white;
 }
 
-.color-green {
+.bot-config-card .color-green {
   background: #15803d;
   color: white;
 }

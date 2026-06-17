@@ -1,0 +1,6 @@
+﻿Bot \ Opponent (average turns),bot8,Hard_Default,bot7,bot6,bot5
+bot8,self,74.26,94.77,44.28,69.14
+Hard_Default,74.26,self,90.79,46.78,65.92
+bot7,94.77,90.79,self,39.93,32.37
+bot6,44.28,46.78,39.93,self,31.98
+bot5,69.14,65.92,32.37,31.98,self
