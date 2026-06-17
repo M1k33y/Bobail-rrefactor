@@ -5,6 +5,13 @@ namespace Bobail.AI.Analysis.Services;
 
 public sealed class GraphGenerator
 {
+    private const int HeatmapCellLabelFontSize = 28;
+    private const int HeatmapTickLabelFontSize = 20;
+    private const int HeatmapAxisLabelFontSize = 24;
+    private const int HeatmapTitleFontSize = 26;
+    private const int HeatmapColorBarLabelFontSize = 22;
+    private const int HeatmapColorBarTickFontSize = 18;
+
     public void SavePairwiseWinrateHeatmap(
         string outputPath,
         IReadOnlyList<BotProfile> profiles,
@@ -37,6 +44,7 @@ public sealed class GraphGenerator
 
         var colorBar = plot.Add.ColorBar(heatmap);
         colorBar.Label = "Win-rate (%)";
+        StyleHeatmapColorBar(colorBar);
         plot.SavePng(outputPath, 1200, 850);
     }
 
@@ -91,6 +99,7 @@ public sealed class GraphGenerator
 
         var colorBar = plot.Add.ColorBar(heatmap);
         colorBar.Label = "Average turns";
+        StyleHeatmapColorBar(colorBar);
         plot.SavePng(outputPath, 1200, 850);
     }
 
@@ -106,15 +115,17 @@ public sealed class GraphGenerator
         var plot = new Plot();
         plot.Add.Heatmap(values);
 
-        plot.Title(title);
-        plot.XLabel(xLabel);
-        plot.YLabel(yLabel);
+        plot.Title(title, HeatmapTitleFontSize);
+        plot.XLabel(xLabel, HeatmapAxisLabelFontSize);
+        plot.YLabel(yLabel, HeatmapAxisLabelFontSize);
         plot.Axes.Bottom.SetTicks(
             profiles.Select((_, index) => (double)index).ToArray(),
             profiles.Select(profile => profile.Name).ToArray());
         plot.Axes.Left.SetTicks(
             profiles.Select((_, index) => (double)index).ToArray(),
-            profiles.Select(profile => profile.Name).ToArray());
+            profiles.Reverse().Select(profile => profile.Name).ToArray());
+        plot.Axes.Bottom.TickLabelStyle.FontSize = HeatmapTickLabelFontSize;
+        plot.Axes.Left.TickLabelStyle.FontSize = HeatmapTickLabelFontSize;
         plot.Axes.Margins(0, 0);
 
         for (int rowIndex = 0; rowIndex < profiles.Count; rowIndex++)
@@ -122,14 +133,21 @@ public sealed class GraphGenerator
             for (int columnIndex = 0; columnIndex < profiles.Count; columnIndex++)
             {
                 var value = values[rowIndex, columnIndex];
-                var text = plot.Add.Text(valueLabel(value), columnIndex, rowIndex);
+                var yPosition = profiles.Count - 1 - rowIndex;
+                var text = plot.Add.Text(valueLabel(value), columnIndex, yPosition);
                 text.Alignment = Alignment.MiddleCenter;
-                text.LabelFontSize = 16;
+                text.LabelFontSize = HeatmapCellLabelFontSize;
                 text.LabelFontColor = textColor(value);
             }
         }
 
         return plot;
+    }
+
+    private static void StyleHeatmapColorBar(ScottPlot.Panels.ColorBar colorBar)
+    {
+        colorBar.LabelStyle.FontSize = HeatmapColorBarLabelFontSize;
+        colorBar.Axis.TickLabelStyle.FontSize = HeatmapColorBarTickFontSize;
     }
 
     private static double[,] BuildMatrix(

@@ -6,8 +6,8 @@ using GeneticSharp;
 
 var settings = new TrainingSettings
 {
-    EasyGamesPerGenome = 4,
-    MediumGamesPerGenome = 6,
+    EasyGamesPerGenome = 2,
+    MediumGamesPerGenome = 4,
     HardGamesPerGenome = 10,
     MaxTurnsPerGame = 200,
     Generations = 200,
@@ -45,12 +45,14 @@ const float highMutationProbability = 0.23f;
 const double improvementEpsilon = 0.01;
 const int randomImmigrantStagnationThreshold = 10;
 const double randomImmigrantFraction = 0.15;
+const int earlyStopStagnationThreshold = 50;
 
 double bestFitnessSoFar = double.MinValue;
 double lastMeaningfulImprovementFitness = double.MinValue;
 EvaluationWeights? bestWeightsSoFar = null;
 int stagnantGenerations = 0;
 int bestGeneration = 0;
+bool stoppedByStagnation = false;
 
 ga.MutationProbability = baseMutationProbability;
 
@@ -97,6 +99,16 @@ ga.GenerationRan += (_, _) =>
             $"Generation {ga.GenerationsNumber}: time={generationElapsed:mm\\:ss}, generationBest={bestChromosome.Fitness:F2}, globalBest={bestFitnessSoFar:F2}, stagnant={stagnantGenerations}, mutation={ga.MutationProbability:F2}, immigrants={immigrantsInjected}");
         Console.WriteLine($"{bestChromosome.ToWeights()}");
         Console.WriteLine();
+
+        if (
+            !stoppedByStagnation &&
+            stagnantGenerations >= earlyStopStagnationThreshold)
+        {
+            stoppedByStagnation = true;
+            Console.WriteLine(
+                $"Early stopping: no meaningful improvement for {stagnantGenerations} generations. Best generation was {bestGeneration}.");
+            ga.Stop();
+        }
     }
 
     generationTimer.Restart();
@@ -113,6 +125,10 @@ bestFitnessSoFar = bestFitnessSoFar == double.MinValue
 
 Console.WriteLine();
 Console.WriteLine("Optimization finished.");
+if (stoppedByStagnation)
+{
+    Console.WriteLine($"Stopped early after reaching {earlyStopStagnationThreshold} stagnant generations.");
+}
 Console.WriteLine($"Best fitness: {bestFitnessSoFar:F2}");
 Console.WriteLine($"Best weights: {bestWeightsSoFar}");
 Console.WriteLine($"Final generation best fitness: {finalGenerationBest.Fitness:F2}");
@@ -127,7 +143,7 @@ var profile = new TrainingRunProfile(
     BestGeneration: bestGeneration,
     FinalGeneration: ga.GenerationsNumber,
     FinalGenerationBestFitness: finalGenerationBest.Fitness.GetValueOrDefault(),
-    FitnessAggregation: "Easy x1.0 + Medium x1.3 + Hard_Default x1.6; per matchup: Min(candidate red score, candidate green score) / candidate games per color",
+    FitnessAggregation: "Easy x0.5 + Medium x1 + Hard_Default x2; per matchup: Min(candidate red score, candidate green score) / candidate games per color",
     Settings: settings,
     MutationSettings: new MutationSettingsProfile(
         baseMutationProbability,

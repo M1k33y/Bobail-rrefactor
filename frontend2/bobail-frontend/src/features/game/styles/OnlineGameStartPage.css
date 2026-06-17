@@ -17,19 +17,27 @@
 .online-game-input {
   flex: 1;
   min-width: 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.55rem 0.75rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surfaceSoft);
   color: var(--text);
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .online-game-input::placeholder {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--mutedText);
+}
+
+.online-game-input:focus {
+  border-color: var(--accent);
+  background: var(--surfaceStrong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .online-error {
-  color: #fecaca;
+  color: var(--danger);
   font-size: 0.9rem;
 }
 

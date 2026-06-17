@@ -19,19 +19,19 @@ const appThemes = {
     shadow: "rgba(0, 0, 0, 0.35)"
   },
   light: {
-    background: "#dbe8f0",
-    text: "#162230",
-    sidebar: "#edf3f7",
-    surface: "rgba(255, 255, 255, 0.75)",
-    surfaceStrong: "rgba(255, 255, 255, 0.92)",
-    surfaceSoft: "rgba(255, 255, 255, 0.56)",
-    border: "rgba(22, 34, 48, 0.12)",
-    mutedText: "rgba(22, 34, 48, 0.72)",
-    accent: "#2563eb",
-    accentStrong: "#1d4ed8",
-    success: "#15803d",
+    background: "#d9e8f1",
+    text: "#0f1b2a",
+    sidebar: "#edf5fa",
+    surface: "rgba(247, 251, 255, 0.9)",
+    surfaceStrong: "rgba(250, 253, 255, 0.98)",
+    surfaceSoft: "rgba(236, 245, 251, 0.84)",
+    border: "rgba(15, 27, 42, 0.18)",
+    mutedText: "rgba(15, 27, 42, 0.76)",
+    accent: "#1d4ed8",
+    accentStrong: "#1e40af",
+    success: "#047857",
     danger: "#b91c1c",
-    shadow: "rgba(44, 62, 80, 0.12)"
+    shadow: "rgba(18, 41, 61, 0.2)"
   },
   forest: {
     background: "#0f1a17",
@@ -79,19 +79,19 @@ const appThemes = {
     shadow: "rgba(0, 0, 0, 0.34)"
   },
   paper: {
-    background: "#f3ecd9",
-    text: "#332718",
-    sidebar: "#faf5e7",
-    surface: "rgba(255, 252, 245, 0.78)",
-    surfaceStrong: "rgba(255, 252, 245, 0.94)",
-    surfaceSoft: "rgba(255, 248, 235, 0.62)",
-    border: "rgba(51, 39, 24, 0.12)",
-    mutedText: "rgba(51, 39, 24, 0.72)",
-    accent: "#b7791f",
-    accentStrong: "#975a16",
-    success: "#2f855a",
-    danger: "#c53030",
-    shadow: "rgba(65, 47, 21, 0.12)"
+    background: "#f2ead5",
+    text: "#241604",
+    sidebar: "#fff8e9",
+    surface: "rgba(255, 250, 239, 0.9)",
+    surfaceStrong: "rgba(255, 252, 244, 0.98)",
+    surfaceSoft: "rgba(250, 240, 216, 0.84)",
+    border: "rgba(36, 22, 4, 0.18)",
+    mutedText: "rgba(36, 22, 4, 0.76)",
+    accent: "#8a4f12",
+    accentStrong: "#6f3d10",
+    success: "#1f6f4a",
+    danger: "#b4232a",
+    shadow: "rgba(65, 47, 21, 0.2)"
   }
 };
 

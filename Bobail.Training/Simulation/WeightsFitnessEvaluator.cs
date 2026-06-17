@@ -30,19 +30,19 @@ public sealed class WeightsFitnessEvaluator
             weights,
             _settings.EasyGamesPerGenome,
             () => new EasyBotStrategy(),
-            difficultyMultiplier: 1.0);
+            difficultyMultiplier: 0.5);
 
         totalFitness += EvaluateMatchup(
             weights,
             _settings.MediumGamesPerGenome,
             CreateBaselineMediumBot,
-            difficultyMultiplier: 1.3);
+            difficultyMultiplier: 1.0);
 
         totalFitness += EvaluateMatchup(
             weights,
             _settings.HardGamesPerGenome,
             CreateBaselineHardBot,
-            difficultyMultiplier: 1.6);
+            difficultyMultiplier: 2.0);
 
         return totalFitness;
     }
