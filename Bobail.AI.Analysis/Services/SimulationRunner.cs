@@ -52,7 +52,10 @@ public sealed class SimulationRunner
         BotProfile greenProfile)
     {
         var game = new Game(GameMode.LocalMultiplayer);
+        var repetitionTracker = new GameRepetitionTracker();
         int turns = 0;
+
+        repetitionTracker.Record(game);
 
         while (game.Status == GameStatus.InProgress && turns < _maxTurnsPerGame)
         {
@@ -71,6 +74,18 @@ public sealed class SimulationRunner
                 game.ExecutePlayerMove(move.From, move.To);
 
             turns++;
+
+            if (game.Status == GameStatus.InProgress &&
+                repetitionTracker.Record(game))
+            {
+                return new MatchGameResult(
+                    botAName,
+                    botBName,
+                    startingBotName,
+                    null,
+                    turns,
+                    false);
+            }
         }
 
         var winnerName = game.Winner is null

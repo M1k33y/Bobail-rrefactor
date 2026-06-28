@@ -8,7 +8,10 @@ public sealed class GameSimulator
     public GameResult PlayGame(IBotStrategy redBot, IBotStrategy greenBot, int maxTurns)
     {
         var game = new Game(GameMode.LocalMultiplayer);
+        var repetitionTracker = new GameRepetitionTracker();
         int turns = 0;
+
+        repetitionTracker.Record(game);
 
         while (game.Status == GameStatus.InProgress && turns < maxTurns)
         {
@@ -26,6 +29,12 @@ public sealed class GameSimulator
                 game.ExecutePlayerMove(move.From, move.To);
 
             turns++;
+
+            if (game.Status == GameStatus.InProgress &&
+                repetitionTracker.Record(game))
+            {
+                return new GameResult(null, turns, false);
+            }
         }
 
         return new GameResult(game.Winner, turns, game.Status == GameStatus.InProgress);
