@@ -24,8 +24,7 @@
 - [x] Replay review page with timeline navigation across saved board states
 - [x] Player stats page with totals, win/loss breakdown, and account age
 - [x] Settings page for app theme, board theme, and piece style selection
-- [x] Theme preferences persisted in `localStorage`
-- [ ] Online multiplayer UI flow
+- [x] Online multiplayer UI flow
 
 ## Authentication
 
@@ -61,9 +60,9 @@
 
 - [x] Local multiplayer on a single device
 - [x] Per-game player mapping persisted for local and bot games
-- [ ] Online multiplayer gameplay
+- [x] Online multiplayer gameplay
 - [ ] Matchmaking
-- [ ] Real-time synchronization with SignalR or equivalent
+
 
 ## Database / Persistence
 
@@ -85,7 +84,7 @@
 - [x] Hard bot difficulty
 - [x] Easy bot strategy using random legal moves with Bobail row preference
 - [x] Medium bot strategy using depth-2 minimax with alpha-beta pruning and transposition table caching
-- [x] Hard bot strategy using depth-3 minimax with tactical heuristics
+- [x] Hard bot strategy using depth-4 minimax with tactical heuristics
 - [x] Genetic algorithm training project for evaluation weights
 - [ ] AI analysis project for bot matchups, CSV export, and graph generation
 
@@ -97,7 +96,7 @@
 - [x] Bot turns are processed asynchronously after human moves and the frontend polls while the bot is thinking
 - [x] Email verification and password reset tokens are stored hashed rather than in plain text
 - [x] Auth and game flows are covered by unit tests and integration tests
-- [ ] 80% test coverage 
+- [x] 80% test coverage 
 
 ---
 
@@ -105,7 +104,7 @@
 
 ### High priority
 
-* [ ] Implement UndoMove
+* [ ] Implement UndoMove () (nu se mai aplica)
 * [x] Adauga Transposition Table
 
 ### Medium
@@ -118,7 +117,7 @@
 
 * [x] Forgot password
 * [x] Feedback UI pentru password match
-* [ ] Password strength indicator (optional)
+* [ ] Password strength indicator (doar ca idee daca e timp)
 * [x] Email verification
 * [x] Remember me
 
