@@ -123,7 +123,7 @@
 
 ---
 
-## Player Stats and Rating System
+## Player Stats and Rating System (idei inainte de implementare)
 
 ---
 
