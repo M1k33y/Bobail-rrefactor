@@ -1,163 +1,105 @@
-# Implemented Features
+# Bobail
 
-## Backend
+Bobail is a full-stack web application for playing the Bobail strategy board game. It supports local two-player matches, games against an AI opponent, and real-time online multiplayer with authenticated accounts, persistent history, and replay review.
 
-- [x] ASP.NET Core Web API with dedicated controllers for authentication and game operations
-- [x] JWT-protected endpoints for game creation, move execution, abandon, history, stats, and replay access
-- [x] Swagger/OpenAPI enabled in development with Bearer token support
-- [x] Global exception-handling middleware returning JSON error payloads
-- [x] SQL Server persistence configured through Entity Framework Core
-- [x] Fixed-window rate limiting applied to authentication-sensitive endpoints
-- [x] Email delivery abstraction with SMTP sender and in-memory fallback based on configuration
-- [x] Background bot execution triggered automatically after player actions in bot games
+## Key Features
 
-## Frontend
+- Play Bobail on a 5x5 board with enforced movement rules, turn phases, legal move highlighting, and win detection.
+- Start local two-player matches on the same device.
+- Play against an AI opponent with Easy, Medium, and Hard difficulty levels and selectable player color.
+- Create and join online multiplayer games by game ID, with real-time SignalR updates, active-game detection, invite ID copying, and turn validation.
+- Use online game controls including 3-minute player clocks, timeout handling, resignation, and forced forfeits when a banned user is in an active match.
+- Register and sign in with JWT authentication, remember-me sessions, email verification, resend verification, and forgot/reset password flows.
+- Review completed matches through paginated game history, result labels, end reasons, and move-by-move replay timelines.
+- Track personal game statistics including total games, wins, losses, member-since date, and results by color.
+- Manage users from an admin panel with search, pagination, ban/unban actions, and real-time forced logout for banned accounts.
+- Learn the rules through a dedicated rules page with animated board examples and customize the app, board, and piece appearance.
 
-- [x] React frontend with route-based navigation using `react-router-dom`
-- [x] Protected routes for starting games, playing games, viewing history, stats, and replay review
-- [x] Home page with login/logout actions and navigation to play flows
-- [x] Rules page describing board setup, movement, turn flow, and victory conditions
-- [x] Interactive game page with board rendering, turn state, and winner modal
-- [x] Local game start page that creates a game and redirects into the match
-- [x] Bot game setup page with selectable difficulty and player color
-- [x] Game history page with pagination and per-game review links
-- [x] Replay review page with timeline navigation across saved board states
-- [x] Player stats page with totals, win/loss breakdown, and account age
-- [x] Settings page for app theme, board theme, and piece style selection
-- [x] Online multiplayer UI flow
+## Technologies Used
 
-## Authentication
+- **Backend:** .NET 8, ASP.NET Core Web API, SignalR, Entity Framework Core, SQL Server
+- **Frontend:** React 19, Vite, React Router, SignalR JavaScript client, Lucide React
+- **Authentication and validation:** JWT bearer authentication, BCrypt, FluentValidation
+- **Testing:** xUnit, FluentAssertions, Moq, ASP.NET Core integration testing, EF Core InMemory/SQLite test stores
+- **AI tooling:** GeneticSharp for bot weight training and ScottPlot for analysis visualizations
 
-- [x] User registration with email, password, and nickname
-- [x] Backend validation for email format, password policy, and nickname length
-- [x] Password hashing using BCrypt
-- [x] Email verification required before login
-- [x] Email verification flow with generated token, hashed token storage, expiration, and verification page
-- [x] Resend verification email flow
-- [x] JWT login response with token, expiry, remember-me flag, and nickname
-- [x] Remember-me session persistence using `localStorage` or `sessionStorage`
-- [x] Forgot password flow with reset token generation and email delivery
-- [x] Reset password flow with token validation, password update, and token invalidation
-- [x] Login blocked for inactive accounts
-- [x] Login blocked for unverified accounts
+## Project Architecture
 
-## Game Logic
+The backend follows a layered structure. `Bobail.Domain` contains the game model and rule enforcement, `Bobail.Application` contains services, DTOs, validation, bot strategies, and repository contracts, `Bobail.Infrastructure` contains SQL persistence and email delivery, and `Bobail.API` exposes REST endpoints, SignalR hubs, middleware, and background services.
 
-- [x] 5x5 board initialization with five red pieces, five green pieces, and Bobail in the center
-- [x] Two-phase turn system: player move and Bobail move
-- [x] First-turn rule where only the player-piece move is performed
-- [x] Player pieces can move horizontally, vertically, or diagonally
-- [x] Player pieces must move as far as possible in the chosen direction
-- [x] Bobail moves exactly one square to an empty adjacent cell
-- [x] Turn ownership validation for both player pieces and Bobail
-- [x] Valid-move endpoints for player pieces and Bobail
-- [x] Victory when Bobail reaches a home row
-- [x] Victory when Bobail is fully surrounded
-- [x] Game abandon state
-- [x] Replay support through per-move game state snapshots
+The React frontend is organized by feature areas such as authentication, gameplay, game history, statistics, rules, settings, and admin management. Separate console projects support AI training and bot profile analysis.
 
-## Multiplayer
+## Installation
 
-- [x] Local multiplayer on a single device
-- [x] Per-game player mapping persisted for local and bot games
-- [x] Online multiplayer gameplay
-- [ ] Matchmaking
+Prerequisites:
 
+- .NET 8 SDK
+- Node.js and npm
+- SQL Server LocalDB or another SQL Server instance
 
-## Database / Persistence
+Install backend dependencies:
 
-- [x] Users table with email, password hash, nickname, role, active flag, and email verification fields
-- [x] Games table storing serialized game state plus status, turn, mode, timestamps, and winner user id
-- [x] Game player records for color assignment and bot participation
-- [x] Game state snapshot history stored for replay and review
-- [x] Email verification token persistence with hashed tokens and expiration
-- [x] Password reset token persistence with hashed tokens, expiration, and used flag
-- [x] Unique constraints for email, token hashes, game/color, game/user, and game/move number
-- [x] Finished-game history queries scoped to the authenticated user
-- [x] Replay queries restricted to users who participated in the finished game
+```bash
+dotnet restore Bobail2.sln
+```
 
-## Bot / AI
+Install frontend dependencies:
 
-- [x] Player-vs-bot mode
-- [x] Easy bot difficulty
-- [x] Medium bot difficulty
-- [x] Hard bot difficulty
-- [x] Easy bot strategy using random legal moves with Bobail row preference
-- [x] Medium bot strategy using depth-2 minimax with alpha-beta pruning and transposition table caching
-- [x] Hard bot strategy using depth-4 minimax with tactical heuristics
-- [x] Genetic algorithm training project for evaluation weights
-- [ ] AI analysis project for bot matchups, CSV export, and graph generation
+```bash
+cd frontend2/bobail-frontend
+npm install
+```
 
-## Implementation Details
+Configure the API in `Bobail.API/appsettings.json` or with user secrets/environment variables:
 
-- [x] Core rules are enforced in the domain layer through `Game` and `GameRules`
-- [x] Controllers stay thin and delegate most logic to application services
-- [x] Current game state is stored as serialized JSON and snapshots are stored incrementally for replay
-- [x] Bot turns are processed asynchronously after human moves and the frontend polls while the bot is thinking
-- [x] Email verification and password reset tokens are stored hashed rather than in plain text
-- [x] Auth and game flows are covered by unit tests and integration tests
-- [x] 80% test coverage 
+- `ConnectionStrings:Default`
+- `Jwt:Key`
+- `Frontend:BaseUrl`
+- optional `Email:Smtp` settings for real email delivery
 
----
+Apply database migrations:
 
-# Project TODO
+```bash
+dotnet ef database update --project Bobail.Infrastructure --startup-project Bobail.API
+```
 
-### High priority
+## Running the Application
 
-* [ ] Implement UndoMove () (nu se mai aplica)
-* [x] Adauga Transposition Table
+Start the API:
 
-### Medium
+```bash
+dotnet run --project Bobail.API --launch-profile https
+```
 
-* [x] Move ordering
-* [x] Caching simplu pe functii
+The backend runs on `https://localhost:7006` by default and exposes Swagger in development.
 
+Start the frontend:
 
-## Login Features
+```bash
+cd frontend2/bobail-frontend
+npm run dev
+```
 
-* [x] Forgot password
-* [x] Feedback UI pentru password match
-* [ ] Password strength indicator (doar ca idee daca e timp)
-* [x] Email verification
-* [x] Remember me
+The frontend runs on `http://localhost:5173` and is configured to call the local HTTPS API.
 
----
+Run tests:
 
-## Player Stats and Rating System (idei inainte de implementare)
+```bash
+dotnet test Bobail2.sln
+```
 
----
+## Project Structure
 
-## GameStats
+- `Bobail.Domain` - core board, pieces, game lifecycle, clocks, and rules
+- `Bobail.Application` - use cases, DTOs, validators, bot strategies, and interfaces
+- `Bobail.Infrastructure` - EF Core persistence, repositories, migrations, and email senders
+- `Bobail.API` - controllers, SignalR hubs, middleware, Swagger, and hosted services
+- `frontend2/bobail-frontend` - React frontend application
+- `Bobail.Training` - bot evaluation weight training console app
+- `Bobail.AI.Analysis` - bot matchup analysis and chart generation console app
+- `*.Tests` and `Bobail.IntegrationTests` - automated test projects
 
-### Fields:
+## Future Improvements
 
-* TotalGamesPlayed
-* TotalWins
-* TotalLosses
-* MemberSince (data crearii contului)
-* CurrentRating
-
-
-## RatingHistory
-
-### Table Structure:
-
-* Id
-* UserId
-* OldRating
-* NewRating
-* GameId
-* CreatedAt
-
----
-
-
-## Posibile Extensii
-
-* WinRate calculat automat
-* Streak (win/lose streak)
-* HighestRating
-* Rating decay (pentru inactivitate)
-* Grafice evolutie rating
-
+- Add automated online matchmaking beyond manual game-ID invites.
 
